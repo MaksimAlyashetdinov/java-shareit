@@ -25,7 +25,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public Item createItem(Long userId, Item item) {
         containsUser(userId);
-        validate(item);
+        validateItem(item);
         item.setOwnerId(userId);
         log.info("Item successfully added: " + item);
         return itemDbStorage.create(item);
@@ -61,11 +61,7 @@ public class ItemServiceImpl implements ItemService {
     public Item updateItem(Long userId, Long itemId, Item item) {
         containsUser(userId);
         containsItem(itemId);
-        Item itemFromMemory = itemDbStorage.getById(itemId);
-        if (itemFromMemory.getOwnerId() != userId) {
-            throw new NotFoundException(
-                    "This item can update only user with id = " + itemFromMemory.getOwnerId());
-        }
+        validateUpdateItem(userId, itemId);
         log.info("Item successfully updated: " + item);
         return itemDbStorage.update(itemId, item);
     }
@@ -89,7 +85,7 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private void validate(Item item) {
+    private void validateItem(Item item) {
         if (item.getName() == null || item.getName().isBlank()) {
             throw new ValidationException("You must specify the name.");
         }
@@ -98,6 +94,14 @@ public class ItemServiceImpl implements ItemService {
         }
         if (item.getAvailable() == null) {
             throw new ValidationException("You must specify the available.");
+        }
+    }
+
+    private void validateUpdateItem(long userId, long itemId) {
+        Item itemFromMemory = itemDbStorage.getById(itemId);
+        if (itemFromMemory.getOwnerId() != userId) {
+            throw new NotFoundException(
+                    "This item can update only user with id = " + itemFromMemory.getOwnerId());
         }
     }
 }
