@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.storage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,12 +17,13 @@ public class ItemDbStorage implements ItemStorage {
 
     @Override
     public List<Item> getAllByName(String name) {
-        List<Item> itemsByName = items.values().stream()
+        return new ArrayList<>(items
+                .values()
+                .stream()
                 .filter(item -> item.getName().toLowerCase().contains(name.toLowerCase())
                         || item.getDescription().toLowerCase().contains(name.toLowerCase()))
                 .filter(item -> item.getAvailable() == true)
-                .collect(Collectors.toList());
-        return itemsByName;
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -63,10 +65,11 @@ public class ItemDbStorage implements ItemStorage {
 
     @Override
     public List<Item> getAllItemsByUserId(Long userId) {
-        List<Item> itemsByUser = items.values().stream()
+        return new ArrayList<>(items
+                .values()
+                .stream()
                 .filter(item -> item.getOwnerId() == userId)
-                .collect(Collectors.toList());
-        return itemsByUser;
+                .collect(Collectors.toList()));
     }
 
     @Override
