@@ -1,7 +1,5 @@
 package ru.practicum.shareit.item.dto;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -10,6 +8,7 @@ import lombok.Data;
 
 @Data
 public class ItemDto {
+
     private Long id;
     private String name;
     private String description;

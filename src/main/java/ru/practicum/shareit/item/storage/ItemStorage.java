@@ -4,13 +4,14 @@ import java.util.List;
 import ru.practicum.shareit.item.model.Item;
 
 public interface ItemStorage {
+
     List<Item> getAllByName(String name);
 
     Item create(Item item);
 
     Item update(Long itemId, Item item);
 
-    Item delete(Long id);
+    void delete(Long id);
 
     Item getById(Long id);
 

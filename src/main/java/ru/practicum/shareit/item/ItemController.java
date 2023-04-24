@@ -32,7 +32,8 @@ public class ItemController {
     }
 
     @PostMapping
-    public Item createItem(@RequestHeader("X-Sharer-User-Id") Long userId, @Valid @RequestBody Item item) {
+    public Item createItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+            @Valid @RequestBody Item item) {
         return itemService.createItem(userId, item);
     }
 
@@ -52,12 +53,13 @@ public class ItemController {
     }
 
     @PatchMapping("/{itemId}")
-    public Item updateItem(@RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long itemId, @Valid @RequestBody Item item) {
+    public Item updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+            @PathVariable Long itemId, @Valid @RequestBody Item item) {
         return itemService.updateItem(userId, itemId, item);
     }
 
     @DeleteMapping("/{itemId}")
-    public Item deleteItem(@PathVariable Long itemId) {
-        return itemService.deleteItem(itemId);
+    public void deleteItem(@PathVariable Long itemId) {
+        itemService.deleteItem(itemId);
     }
 }

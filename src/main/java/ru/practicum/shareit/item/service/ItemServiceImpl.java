@@ -17,7 +17,6 @@ public class ItemServiceImpl implements ItemService {
     private final ItemDbStorage itemDbStorage;
     private final UserDbStorage userDbStorage;
 
-
     public ItemServiceImpl(ItemDbStorage itemDbStorage, UserDbStorage userDbStorage) {
         this.itemDbStorage = itemDbStorage;
         this.userDbStorage = userDbStorage;
@@ -25,9 +24,6 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item createItem(Long userId, Item item) {
-        if (userId == 0) {
-            throw new ValidationException("You must specify the user id.");
-        }
         containsUser(userId);
         validate(item);
         item.setOwnerId(userId);
@@ -48,14 +44,16 @@ public class ItemServiceImpl implements ItemService {
             log.info("Get list with empty items name.");
             return new ArrayList<>();
         }
-        log.info("List of all items with name {}: " + itemDbStorage.getAllByName(name).size(), name);
+        log.info("List of all items with name {}: " + itemDbStorage.getAllByName(name).size(),
+                name);
         return itemDbStorage.getAllByName(name);
     }
 
     @Override
     public List<Item> getAllItemsByUserId(Long userId) {
         containsUser(userId);
-        log.info("List of all items for user with id {}: " + itemDbStorage.getAllItemsByUserId(userId).size(), userId);
+        log.info("List of all items for user with id {}: " + itemDbStorage.getAllItemsByUserId(
+                userId).size(), userId);
         return itemDbStorage.getAllItemsByUserId(userId);
     }
 
@@ -63,19 +61,20 @@ public class ItemServiceImpl implements ItemService {
     public Item updateItem(Long userId, Long itemId, Item item) {
         containsUser(userId);
         containsItem(itemId);
-        Item itemFromDb = itemDbStorage.getById(itemId);
-        if (itemFromDb.getOwnerId() != userId) {
-            throw new NotFoundException("This item can update only user with id = " + itemFromDb.getOwnerId());
+        Item itemFromMemory = itemDbStorage.getById(itemId);
+        if (itemFromMemory.getOwnerId() != userId) {
+            throw new NotFoundException(
+                    "This item can update only user with id = " + itemFromMemory.getOwnerId());
         }
         log.info("Item successfully updated: " + item);
         return itemDbStorage.update(itemId, item);
     }
 
     @Override
-    public Item deleteItem(Long itemId) {
+    public void deleteItem(Long itemId) {
         containsItem(itemId);
         log.info("Deleted item with id: {}", itemId);
-        return itemDbStorage.delete(itemId);
+        itemDbStorage.delete(itemId);
     }
 
     private void containsItem(Long id) {

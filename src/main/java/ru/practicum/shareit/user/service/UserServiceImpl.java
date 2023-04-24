@@ -36,8 +36,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public User update(Long userId, User user) {
         containsUser(userId);
-        User userFromBd = userDbStorage.getById(userId);
-        if (!userFromBd.getEmail().equals(user.getEmail())) {
+        User userFromMemory = userDbStorage.getById(userId);
+        if (!userFromMemory.getEmail().equals(user.getEmail())) {
             containsEmail(user.getEmail());
         }
         log.info("User successfully updated: " + user);
@@ -45,10 +45,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User delete(Long id) {
+    public void delete(Long id) {
         containsUser(id);
         log.info("Deleted user with id: {}", id);
-        return userDbStorage.delete(id);
+        userDbStorage.delete(id);
     }
 
     @Override
