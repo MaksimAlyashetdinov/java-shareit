@@ -68,7 +68,7 @@ public class ItemDbStorage implements ItemStorage {
         return new ArrayList<>(items
                 .values()
                 .stream()
-                .filter(item -> item.getOwnerId() == userId)
+                .filter(item -> item.getOwnerId().equals(userId))
                 .collect(Collectors.toList()));
     }
 
