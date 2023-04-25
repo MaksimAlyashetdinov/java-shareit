@@ -1,11 +1,12 @@
 package ru.practicum.shareit.booking.utils;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.dto.BookingDto;
 
-@Service
-public class MappingBooking {
+@Component
+public class BookingMapper {
+
     public BookingDto mapToBookingDto(Booking booking) {
         BookingDto dto = new BookingDto();
         dto.setItemId(booking.getItemId());

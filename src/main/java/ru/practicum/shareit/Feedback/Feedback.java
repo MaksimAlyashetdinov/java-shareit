@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class Feedback {
+
     @NotNull
     private Long userId;
     @NotNull

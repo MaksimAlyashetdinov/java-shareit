@@ -7,19 +7,20 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.storage.ItemDbStorage;
-import ru.practicum.shareit.user.storage.UserDbStorage;
+import ru.practicum.shareit.item.storage.InMemoryItemStorage;
+import ru.practicum.shareit.user.storage.InMemoryUserStorage;
 
 @Service
 @Slf4j
 public class ItemServiceImpl implements ItemService {
 
-    private final ItemDbStorage itemDbStorage;
-    private final UserDbStorage userDbStorage;
+    private final InMemoryItemStorage inMemoryItemStorage;
+    private final InMemoryUserStorage inMemoryUserStorage;
 
-    public ItemServiceImpl(ItemDbStorage itemDbStorage, UserDbStorage userDbStorage) {
-        this.itemDbStorage = itemDbStorage;
-        this.userDbStorage = userDbStorage;
+    public ItemServiceImpl(InMemoryItemStorage inMemoryItemStorage,
+            InMemoryUserStorage inMemoryUserStorage) {
+        this.inMemoryItemStorage = inMemoryItemStorage;
+        this.inMemoryUserStorage = inMemoryUserStorage;
     }
 
     @Override
@@ -28,14 +29,14 @@ public class ItemServiceImpl implements ItemService {
         validateItem(item);
         item.setOwnerId(userId);
         log.info("Item successfully added: " + item);
-        return itemDbStorage.create(item);
+        return inMemoryItemStorage.create(item);
     }
 
     @Override
     public Item getById(Long itemId) {
         containsItem(itemId);
         log.info("Requested item with ID = " + itemId);
-        return itemDbStorage.getById(itemId);
+        return inMemoryItemStorage.getById(itemId);
     }
 
     @Override
@@ -44,17 +45,18 @@ public class ItemServiceImpl implements ItemService {
             log.info("Get list with empty items name.");
             return new ArrayList<>();
         }
-        log.info("List of all items with name {}: " + itemDbStorage.getAllByName(name).size(),
+        log.info("List of all items with name {}: " + inMemoryItemStorage.getAllByName(name).size(),
                 name);
-        return itemDbStorage.getAllByName(name);
+        return inMemoryItemStorage.getAllByName(name);
     }
 
     @Override
     public List<Item> getAllItemsByUserId(Long userId) {
         containsUser(userId);
-        log.info("List of all items for user with id {}: " + itemDbStorage.getAllItemsByUserId(
-                userId).size(), userId);
-        return itemDbStorage.getAllItemsByUserId(userId);
+        log.info(
+                "List of all items for user with id {}: " + inMemoryItemStorage.getAllItemsByUserId(
+                        userId).size(), userId);
+        return inMemoryItemStorage.getAllItemsByUserId(userId);
     }
 
     @Override
@@ -62,25 +64,35 @@ public class ItemServiceImpl implements ItemService {
         containsUser(userId);
         containsItem(itemId);
         validateUpdateItem(userId, itemId);
-        log.info("Item successfully updated: " + item);
-        return itemDbStorage.update(itemId, item);
+        Item itemFromMemory = getById(itemId);
+        if (item.getName() != null && !item.getName().isBlank()) {
+            itemFromMemory.setName(item.getName());
+        }
+        if (item.getDescription() != null && !item.getDescription().isBlank()) {
+            itemFromMemory.setDescription(item.getDescription());
+        }
+        if (item.getAvailable() != null) {
+            itemFromMemory.setAvailable(item.getAvailable());
+        }
+        log.info("Item successfully updated: " + itemFromMemory);
+        return inMemoryItemStorage.update(itemId, itemFromMemory);
     }
 
     @Override
     public void deleteItem(Long itemId) {
         containsItem(itemId);
         log.info("Deleted item with id: {}", itemId);
-        itemDbStorage.delete(itemId);
+        inMemoryItemStorage.delete(itemId);
     }
 
     private void containsItem(Long id) {
-        if (!itemDbStorage.containsItem(id)) {
+        if (!inMemoryItemStorage.containsItem(id)) {
             throw new NotFoundException("Item with id = " + id + " not exist.");
         }
     }
 
     private void containsUser(Long id) {
-        if (!userDbStorage.containsUser(id)) {
+        if (!inMemoryUserStorage.containsUser(id)) {
             throw new NotFoundException("User with id = " + id + " not exist.");
         }
     }
@@ -98,7 +110,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private void validateUpdateItem(long userId, long itemId) {
-        Item itemFromMemory = itemDbStorage.getById(itemId);
+        Item itemFromMemory = inMemoryItemStorage.getById(itemId);
         if (itemFromMemory.getOwnerId() != userId) {
             throw new NotFoundException(
                     "This item can update only user with id = " + itemFromMemory.getOwnerId());

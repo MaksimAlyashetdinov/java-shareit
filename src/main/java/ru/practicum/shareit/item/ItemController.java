@@ -16,9 +16,6 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemServiceImpl;
 import ru.practicum.shareit.user.service.UserServiceImpl;
 
-/**
- * TODO Sprint add-controllers.
- */
 @RestController
 @RequestMapping(path = "/items")
 public class ItemController {

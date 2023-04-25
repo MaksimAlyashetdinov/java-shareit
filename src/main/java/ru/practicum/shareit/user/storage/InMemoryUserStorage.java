@@ -9,7 +9,7 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.User;
 
 @Repository
-public class UserDbStorage implements UserStorage {
+public class InMemoryUserStorage implements UserStorage {
 
     private Map<Long, User> users = new HashMap<>();
     private long id;
@@ -28,15 +28,8 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User update(Long userId, User user) {
-        User userFromMemory = users.get(userId);
-        if (user.getName() != null && !user.getName().isBlank()) {
-            userFromMemory.setName(user.getName());
-        }
-        if (user.getEmail() != null) {
-            userFromMemory.setEmail(user.getEmail());
-        }
-        users.put(userId, userFromMemory);
-        return userFromMemory;
+        users.put(userId, user);
+        return user;
     }
 
     @Override

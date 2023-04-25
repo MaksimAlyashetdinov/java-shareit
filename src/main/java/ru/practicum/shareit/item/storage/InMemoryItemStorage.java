@@ -10,9 +10,9 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.model.Item;
 
 @Repository
-public class ItemDbStorage implements ItemStorage {
+public class InMemoryItemStorage implements ItemStorage {
 
-    Map<Long, Item> items = new HashMap<>();
+    private Map<Long, Item> items = new HashMap<>();
     private long id;
 
     @Override
@@ -35,17 +35,7 @@ public class ItemDbStorage implements ItemStorage {
 
     @Override
     public Item update(Long itemId, Item item) {
-        Item itemFromMemory = items.get(itemId);
-        if (item.getName() != null && !item.getName().isBlank()) {
-            itemFromMemory.setName(item.getName());
-        }
-        if (item.getDescription() != null && !item.getDescription().isBlank()) {
-            itemFromMemory.setDescription(item.getDescription());
-        }
-        if (item.getAvailable() != null) {
-            itemFromMemory.setAvailable(item.getAvailable());
-        }
-        items.put(itemId, itemFromMemory);
+        items.put(itemId, item);
         return items.get(itemId);
     }
 
