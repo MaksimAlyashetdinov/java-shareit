@@ -8,21 +8,22 @@ import ru.practicum.shareit.exception.ObjectAlreadyExistsException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.storage.InMemoryUserStorage;
+import ru.practicum.shareit.user.storage.UserStorage;
 
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    private final InMemoryUserStorage inMemoryUserStorage;
+    private final UserStorage userStorage;
 
-    public UserServiceImpl(InMemoryUserStorage inMemoryUserStorage) {
-        this.inMemoryUserStorage = inMemoryUserStorage;
+    public UserServiceImpl(UserStorage userStorage) {
+        this.userStorage = userStorage;
     }
 
     @Override
     public List<User> getAll() {
-        log.info("List of all users: " + inMemoryUserStorage.getAll().size());
-        return inMemoryUserStorage.getAll();
+        log.info("List of all users: " + userStorage.getAll().size());
+        return userStorage.getAll();
     }
 
     @Override
@@ -30,13 +31,13 @@ public class UserServiceImpl implements UserService {
         validate(user);
         containsEmail(user.getEmail());
         log.info("User successfully added: " + user);
-        return inMemoryUserStorage.create(user);
+        return userStorage.create(user);
     }
 
     @Override
     public User update(Long userId, User user) {
         containsUser(userId);
-        User userFromMemory = inMemoryUserStorage.getById(userId);
+        User userFromMemory = userStorage.getById(userId);
         if (!userFromMemory.getEmail().equals(user.getEmail())) {
             containsEmail(user.getEmail());
         }
@@ -47,33 +48,33 @@ public class UserServiceImpl implements UserService {
             userFromMemory.setEmail(user.getEmail());
         }
         log.info("User successfully updated: " + userFromMemory);
-        return inMemoryUserStorage.update(userId, userFromMemory);
+        return userStorage.update(userId, userFromMemory);
     }
 
     @Override
     public void delete(Long id) {
         containsUser(id);
         log.info("Deleted user with id: {}", id);
-        inMemoryUserStorage.delete(id);
+        userStorage.delete(id);
     }
 
     @Override
     public User getById(Long id) {
         containsUser(id);
         log.info("Requested user with ID = " + id);
-        return inMemoryUserStorage.getById(id);
+        return userStorage.getById(id);
     }
 
     @Override
     public void containsUser(Long id) {
-        if (!inMemoryUserStorage.containsUser(id)) {
+        if (!userStorage.containsUser(id)) {
             throw new NotFoundException("User with id = " + id + " not exist.");
         }
     }
 
     @Override
     public void containsEmail(String email) {
-        if (inMemoryUserStorage.containsEmail(email)) {
+        if (userStorage.containsEmail(email)) {
             throw new ObjectAlreadyExistsException(
                     "User with email = " + email + " already exists.");
         }

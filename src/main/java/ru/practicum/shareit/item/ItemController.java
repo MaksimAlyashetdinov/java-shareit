@@ -13,17 +13,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.service.ItemServiceImpl;
-import ru.practicum.shareit.user.service.UserServiceImpl;
+import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.user.service.UserService;
 
 @RestController
 @RequestMapping(path = "/items")
 public class ItemController {
 
-    private final ItemServiceImpl itemService;
-    private final UserServiceImpl userService;
+    private final ItemService itemService;
+    private final UserService userService;
 
-    public ItemController(ItemServiceImpl itemService, UserServiceImpl userService) {
+    public ItemController(ItemService itemService, UserService userService) {
         this.itemService = itemService;
         this.userService = userService;
     }
