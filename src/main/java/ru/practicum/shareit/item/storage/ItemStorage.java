@@ -1,21 +1,14 @@
 package ru.practicum.shareit.item.storage;
 
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import ru.practicum.shareit.item.model.Item;
 
-public interface ItemStorage {
+public interface ItemStorage extends JpaRepository<Item, Long> {
 
-    List<Item> getAllByName(String name);
+    @Query("select i from items as i join fetch commons as")
+    List<Item> findAllByName(String name);
 
-    Item create(Item item);
-
-    Item update(Long itemId, Item item);
-
-    void delete(Long id);
-
-    Item getById(Long id);
-
-    List<Item> getAllItemsByUserId(Long userId);
-
-    boolean containsItem(Long id);
+    List<Item> findAllByOwnerId(Long ownerId);
 }

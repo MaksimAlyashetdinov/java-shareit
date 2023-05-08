@@ -5,12 +5,13 @@ import javax.validation.constraints.Future;
 import javax.validation.constraints.FutureOrPresent;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
+import ru.practicum.shareit.item.model.Item;
 
 @Data
 public class BookingDto {
 
     @NotNull
-    private Long itemId;
+    private Item item;
 
     @NotNull
     private Long userId;

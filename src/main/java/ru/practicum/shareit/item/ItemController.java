@@ -2,6 +2,7 @@ package ru.practicum.shareit.item;
 
 import java.util.List;
 import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,19 +15,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.user.service.UserService;
 
 @RestController
 @RequestMapping(path = "/items")
+@RequiredArgsConstructor
 public class ItemController {
 
     private final ItemService itemService;
-    private final UserService userService;
-
-    public ItemController(ItemService itemService, UserService userService) {
-        this.itemService = itemService;
-        this.userService = userService;
-    }
 
     @PostMapping
     public Item createItem(@RequestHeader("X-Sharer-User-Id") Long userId,
@@ -58,5 +53,11 @@ public class ItemController {
     @DeleteMapping("/{itemId}")
     public void deleteItem(@PathVariable Long itemId) {
         itemService.deleteItem(itemId);
+    }
+
+    @PostMapping("/{itemId}/comment")
+        public Comment addCommentToItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+            @PathVariable Long itemId, @RequestBody String text) {
+        return itemService.addCommentToItem(userId, itemId, text);
     }
 }

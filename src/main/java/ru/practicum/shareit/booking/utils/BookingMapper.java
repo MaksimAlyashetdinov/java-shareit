@@ -9,7 +9,7 @@ public class BookingMapper {
 
     public BookingDto mapToBookingDto(Booking booking) {
         BookingDto dto = new BookingDto();
-        dto.setItemId(booking.getItemId());
+        dto.setItem(booking.getItem());
         dto.setStartBooking(booking.getStartBooking());
         dto.setEndBooking(booking.getEndBooking());
         return dto;
@@ -17,7 +17,7 @@ public class BookingMapper {
 
     public Booking mapToBooking(BookingDto dto) {
         Booking booking = new Booking();
-        booking.setItemId(dto.getItemId());
+        booking.setItem(dto.getItem());
         booking.setStartBooking(dto.getStartBooking());
         booking.setEndBooking(dto.getEndBooking());
         return booking;

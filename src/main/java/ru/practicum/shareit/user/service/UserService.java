@@ -15,7 +15,5 @@ public interface UserService {
 
     User getById(Long id);
 
-    void containsUser(Long id);
-
     void containsEmail(String email);
 }
