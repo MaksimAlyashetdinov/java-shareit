@@ -1,8 +1,8 @@
 package ru.practicum.shareit.booking.service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +15,7 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.storage.UserStorage;
 
 @Service
@@ -29,13 +30,16 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Booking create(long userId, Booking booking) {
-        containsUser(userId);
+        User booker = containsUser(userId);
+        Item item = containsItem(booking);
+        if (userId == item.getOwnerId()) {
+            throw new NotFoundException("You can't booking own items.");
+        }
         validateBooking(booking);
-        containsItem(booking.getItem().getId());
-        checkItemState(booking, booking.getItem().getId());
-        booking.setUserId(userId);
-        booking.setState(BookingState.WAITING);
-        booking.setCreateDate(LocalDate.now());
+        checkItemState(booking, item);
+        booking.setBooker(booker);
+        booking.setStatus(BookingState.WAITING);
+        booking.setCreateDate(LocalDateTime.now());
         log.info("Booking successfully added: " + booking);
         return bookingStorage.save(booking);
     }
@@ -43,9 +47,11 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Booking getById(long id, long userId) {
         containsUser(userId);
-        Booking booking = bookingStorage.findById(id).orElseThrow(() -> new NotFoundException("Booking not found."));
-        if (booking.getUserId() != userId || booking.getItem().getOwnerId() != userId) {
-            throw new ValidationException("The user does not have access to the requested booking.");
+        Booking booking = containsBooking(id);
+        Item item = containsItem(booking);
+        if (booking.getBooker().getId() != userId && item.getOwnerId() != userId) {
+            throw new NotFoundException(
+                    "The user does not have access to the requested booking.");
         }
         log.info("Requested booking with ID = " + id);
         return booking;
@@ -53,24 +59,24 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Booking update(Booking booking) {
-        Booking bookingFromStorage = bookingStorage.findById(booking.getId()).orElseThrow(() -> new NotFoundException("Booking not found."));
+        Booking bookingFromStorage = containsBooking(booking.getId());
         if (booking.getItem() != null) {
             bookingFromStorage.setItem(booking.getItem());
         }
-        if (booking.getUserId() != null) {
-            bookingFromStorage.setUserId(booking.getUserId());
+        if (booking.getBooker() != null) {
+            bookingFromStorage.setBooker(booking.getBooker());
         }
-        if (booking.getStartBooking() != null || booking.getEndBooking() != null) {
-            checkItemState(booking, booking.getItem().getId());
+        if (booking.getStart() != null || booking.getEnd() != null) {
+            checkItemState(booking, bookingFromStorage.getItem());
         }
-        if (booking.getStartBooking() != null) {
-            bookingFromStorage.setStartBooking(booking.getStartBooking());
+        if (booking.getStart() != null) {
+            bookingFromStorage.setStart(booking.getStart());
         }
-        if (booking.getEndBooking() != null) {
-            bookingFromStorage.setEndBooking(booking.getEndBooking());
+        if (booking.getEnd() != null) {
+            bookingFromStorage.setEnd(booking.getEnd());
         }
-        if (booking.getState() != null) {
-            bookingFromStorage.setState(booking.getState());
+        if (booking.getStatus() != null) {
+            bookingFromStorage.setStatus(booking.getStatus());
         }
         log.info("Booking successfully updated: " + bookingFromStorage);
         return bookingStorage.save(bookingFromStorage);
@@ -78,7 +84,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public void delete(long id) {
-        Booking booking = bookingStorage.findById(id).orElseThrow(() -> new NotFoundException("Booking not found."));
+        Booking booking = containsBooking(id);
         log.info("Deleted booking with id: {}", id);
         bookingStorage.delete(booking);
     }
@@ -86,7 +92,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<Booking> getAllByUserId(long id) {
         containsUser(id);
-        return bookingStorage.findAllByUserId(id);
+        return bookingStorage.findAllByBookerId(id);
     }
 
     @Override
@@ -96,12 +102,19 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Booking changeStateOfBooking(long id, boolean approved) {
-        Booking booking = bookingStorage.findById(id).orElseThrow(() -> new NotFoundException("Booking not found."));
+    public Booking changeStateOfBooking(long id, boolean approved, long userId) {
+        Booking booking = containsBooking(id);
+        containsUser(userId);
+        if (booking.getItem().getOwnerId() != userId) {
+            throw new NotFoundException("This user can't change status.");
+        }
+        if (booking.getStatus().equals(BookingState.APPROVED)) {
+            throw new ValidationException("This booking is approved before that.");
+        }
         if (approved == true) {
-            booking.setState(BookingState.APPROVED);
+            booking.setStatus(BookingState.APPROVED);
         } else {
-            booking.setState(BookingState.REJECTED);
+            booking.setStatus(BookingState.REJECTED);
         }
         return bookingStorage.save(booking);
     }
@@ -109,7 +122,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<Booking> getByStateAndUserId(String state, long userId) {
         containsUser(userId);
-        List<Booking> bookingsByUserId = bookingStorage.findAllByUserId(userId);
+        List<Booking> bookingsByUserId = bookingStorage.findAllByBookerId(userId);
         return getBookingsByState(bookingsByUserId, state);
     }
 
@@ -121,134 +134,131 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private List<Booking> getBookingsByState(List<Booking> bookings, String state) {
+        List<Booking> resultBookings = new ArrayList<>();
         if (state == null || state.equals("ALL")) {
-            Collections.sort(bookings, (b1, b2) -> b1.getCreateDate()
-                                                     .compareTo(b2.getCreateDate()));
-            return bookings;
+            resultBookings = bookings;
+            resultBookings.sort(Comparator.comparing(Booking::getStart).reversed());
+            return resultBookings;
         }
-        if (state.equals("CURRENT")) {
-            List<Booking> currentBookings = new ArrayList<>();
-            for (Booking booking : bookings) {
-                if ((booking.getState()
-                            .equals(BookingState.APPROVED)) && (booking.getStartBooking()
-                                                                       .isBefore(LocalDate.now())
-                        && booking.getEndBooking()
-                                  .isAfter(LocalDate.now()))) {
-                    currentBookings.add(booking);
+        switch (state) {
+            case "CURRENT":
+                for (Booking booking : bookings) {
+                    if (booking.getStart().isBefore(LocalDateTime.now())
+                            && booking.getEnd()
+                                      .isAfter(LocalDateTime.now())) {
+                        resultBookings.add(booking);
+                    }
                 }
-            }
-            Collections.sort(currentBookings, (b1, b2) -> b1.getCreateDate()
-                                                            .compareTo(b2.getCreateDate()));
-            return currentBookings;
-        }
-        if (state.equals("**PAST**")) {
-            List<Booking> pastBookings = new ArrayList<>();
-            for (Booking booking : bookings) {
-                if (booking.getState()
-                           .equals(BookingState.APPROVED) && booking.getEndBooking()
-                                                                    .isBefore(LocalDate.now())) {
-                    pastBookings.add(booking);
+                break;
+            case "**PAST**":
+                for (Booking booking : bookings) {
+                    if (booking.getEnd().isBefore(LocalDateTime.now())) {
+                        resultBookings.add(booking);
+                    }
                 }
-            }
-            Collections.sort(pastBookings, (b1, b2) -> b1.getCreateDate()
-                                                         .compareTo(b2.getCreateDate()));
-            return pastBookings;
-        }
-        if (state.equals("FUTURE")) {
-            List<Booking> futureBookings = new ArrayList<>();
-            for (Booking booking : bookings) {
-                if (booking.getState()
-                           .equals(BookingState.APPROVED) && booking.getStartBooking()
-                                                                    .isAfter(LocalDate.now())) {
-                    futureBookings.add(booking);
+                break;
+            case "FUTURE":
+                for (Booking booking : bookings) {
+                    if (booking.getEnd().isAfter(LocalDateTime.now())) {
+                        resultBookings.add(booking);
+                    }
                 }
-            }
-            Collections.sort(futureBookings, (b1, b2) -> b1.getCreateDate()
-                                                           .compareTo(b2.getCreateDate()));
-            return futureBookings;
-        }
-        if (state.equals("WAITING")) {
-            List<Booking> waitingBookings = new ArrayList<>();
-            for (Booking booking : bookings) {
-                if (booking.getState()
-                           .equals(BookingState.WAITING)) {
-                    waitingBookings.add(booking);
+                break;
+            case "WAITING":
+                for (Booking booking : bookings) {
+                    if (booking.getStatus()
+                               .equals(BookingState.WAITING)) {
+                        resultBookings.add(booking);
+                    }
                 }
-            }
-            Collections.sort(waitingBookings, (b1, b2) -> b1.getCreateDate()
-                                                            .compareTo(b2.getCreateDate()));
-            return waitingBookings;
-        }
-        if (state.equals("REJECTED")) {
-            List<Booking> rejectedBookings = new ArrayList<>();
-            for (Booking booking : bookings) {
-                if (booking.getState()
-                           .equals(BookingState.REJECTED)) {
-                    rejectedBookings.add(booking);
+                break;
+            case "REJECTED":
+                for (Booking booking : bookings) {
+                    if (booking.getStatus()
+                               .equals(BookingState.REJECTED)) {
+                        resultBookings.add(booking);
+                    }
                 }
-            }
-            Collections.sort(rejectedBookings, (b1, b2) -> b1.getCreateDate()
-                                                             .compareTo(b2.getCreateDate()));
-            return rejectedBookings;
+                break;
+            default: throw new ValidationException("Unknown state: " + state);
         }
-        return null;
+        resultBookings.sort(Comparator.comparing(Booking::getStart).reversed());
+        return resultBookings;
     }
 
     private void validateBooking(Booking booking) {
-        if (booking.getItem() == null || booking.getStartBooking() == null || booking.getEndBooking() == null) {
+        if (booking.getStart() == null || booking.getStart().isBefore(LocalDateTime.now())) {
+            throw new ValidationException(
+                    "The start of the booking cannot be earlier than the current date or empty.");
+        }
+        if (booking.getEnd() == null || booking.getEnd()
+                                               .isBefore(booking.getStart()) || booking.getEnd()
+                .isEqual(booking.getStart())) {
+            throw new ValidationException(
+                    "The end of the booking cannot be earlier than the beginning or match it.");
+        }
+    }
+
+    private User containsUser(long id) {
+        User booker = userStorage.findById(id).orElseThrow(() -> new NotFoundException("User with id = " + id + " not exist."));
+        return booker;
+    }
+
+    private Item containsItem(Booking booking) {
+        if (booking.getItem() == null) {
             throw new ValidationException("It is necessary to fill in all fields.");
         }
-        if (booking.getStartBooking().isBefore(LocalDate.now())) {
-            throw new ValidationException("The start of the booking cannot be earlier than the current date.");
+        Item item = itemStorage.findById(booking.getItem().getId()).orElseThrow(() -> new NotFoundException("Item not found."));
+        if (!item.getAvailable()) {
+            throw new ValidationException("Item is not available now.");
         }
-        if (booking.getEndBooking().isBefore(booking.getStartBooking()) || booking.getEndBooking().isEqual(booking.getStartBooking())) {
-            throw new ValidationException("The end of the booking cannot be earlier than the beginning or match it.");
-        }
+        return item;
     }
 
-    private void containsUser(long id) {
-        if (userStorage.findById(id).isEmpty()) {
-            throw new NotFoundException("User with id = " + id + " not exist.");
-        }
+    private Booking containsBooking(long id) {
+        Booking booking = bookingStorage.findById(id).orElseThrow(() -> new NotFoundException("Booking with id = " + id + " not exist."));
+        return booking;
     }
 
-    private void containsItem(long id) {
-        if (itemStorage.findById(id).isEmpty()) {
-            throw new NotFoundException("Item with id = " + id + " not exist.");
-        }
-    }
-
-    private void checkItemState(Booking booking, long itemId) {
-        List<Booking> bookingsByItem = bookingStorage.findAllByItemIdAndState(booking.getItem().getId(), BookingState.APPROVED.toString());
+    private void checkItemState(Booking booking, Item item) {
+        List<Booking> bookingsByItem = bookingStorage.findAllByItemIdAndStatus(item.getId(),
+                BookingState.APPROVED);
         for (Booking b : bookingsByItem) {
-            if ((booking.getStartBooking().isAfter(b.getStartBooking()) && booking.getStartBooking().isBefore(b.getEndBooking())) || (booking.getEndBooking().isAfter(b.getStartBooking()) && booking.getEndBooking().isBefore(b.getEndBooking()))) {
+            if ((booking.getStart()
+                        .isAfter(b.getStart()) && booking.getStart()
+                                                         .isBefore(b.getEnd())) || (booking.getEnd()
+                                                                                           .isAfter(
+                                                                                                   b.getStart())
+                    && booking.getEnd()
+                              .isBefore(b.getEnd()))) {
                 throw new ValidationException("Invalid booking range");
             }
         }
-        updateLastAndNextItemBooking(booking, itemId);
+        //updateLastAndNextItemBooking(booking, item);
     }
 
-    private void updateLastAndNextItemBooking(Booking booking, long itemId) {
-        Item item = itemStorage.findById(itemId).orElseThrow(() -> new NotFoundException("Item not found."));
-        if (item.getLastStartBooking() == null && booking.getStartBooking().isBefore(LocalDate.now())) {
-            item.setLastStartBooking(booking.getStartBooking());
-            item.setLastEndBooking(booking.getEndBooking());
+   /* private void updateLastAndNextItemBooking(Booking booking, Item item) {
+        if (item.getLastBooking() == null && booking.getStart()
+                                                         .isBefore(LocalDateTime.now())) {
+            item.setLastBooking(booking);
             itemStorage.save(item);
         }
-        if (item.getNextEndBooking() == null && booking.getStartBooking().isAfter(LocalDate.now())) {
-            item.setNextStartBooking(booking.getStartBooking());
-            item.setNextEndBooking(booking.getEndBooking());
+        if (item.getNextBooking() == null && booking.getStart()
+                                                       .isAfter(LocalDateTime.now())) {
+            item.setNextBooking(booking);
             itemStorage.save(item);
         }
-        if (booking.getStartBooking().isBefore(LocalDate.now()) && booking.getStartBooking().isAfter(item.getLastStartBooking())) {
-            item.setLastStartBooking(booking.getStartBooking());
-            item.setLastEndBooking(booking.getEndBooking());
+        if (booking.getStart()
+                   .isBefore(LocalDateTime.now()) && booking.getStart()
+                                                        .isAfter(item.getLastBooking().getStart())) {
+            item.setLastBooking(booking);
             itemStorage.save(item);
         }
-        if (booking.getStartBooking().isAfter(LocalDate.now()) && booking.getStartBooking().isBefore(item.getNextStartBooking())) {
-            item.setNextStartBooking(booking.getStartBooking());
-            item.setNextEndBooking(booking.getEndBooking());
+        if (booking.getStart()
+                   .isAfter(LocalDateTime.now()) && booking.getStart()
+                                                       .isBefore(item.getNextBooking().getStart())) {
+            item.setNextBooking(booking);
             itemStorage.save(item);
         }
-    }
+    }*/
 }

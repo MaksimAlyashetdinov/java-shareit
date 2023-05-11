@@ -10,7 +10,7 @@ public interface BookingService {
     void delete(long id);
     List<Booking> getAllByUserId(long id);
     List<Booking> getAllByOwnerId(long id);
-    Booking changeStateOfBooking(long id, boolean approved);
+    Booking changeStateOfBooking(long id, boolean approved, long userId);
 
     List<Booking> getByStateAndUserId(String state, long userId);
 

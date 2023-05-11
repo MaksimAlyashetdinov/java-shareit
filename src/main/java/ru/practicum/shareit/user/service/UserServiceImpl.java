@@ -29,7 +29,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User create(User user) {
         validate(user);
-        containsEmail(user.getEmail());
+        //containsEmail(user.getEmail());
         log.info("User successfully added: " + user);
         return userStorage.save(user);
     }
@@ -37,9 +37,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public User update(Long userId, User user) {
         User userFromStorage = userStorage.findById(userId).orElseThrow(() -> new NotFoundException("User with not found."));
-        if (!userFromStorage.getEmail().equals(user.getEmail())) {
+        /*if (!userFromStorage.getEmail().equals(user.getEmail())) {
             containsEmail(user.getEmail());
-        }
+        }*/
         if (user.getName() != null && !user.getName().isBlank()) {
             userFromStorage.setName(user.getName());
         }
