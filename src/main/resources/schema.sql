@@ -25,8 +25,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     booker_id BIGINT REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     start_booking DATE NOT NULL,
     end_booking DATE NOT NULL,
-    status VARCHAR(200),
-    create_date DATE
+    status VARCHAR(200)
 );
 
 CREATE TABLE IF NOT EXISTS comments (

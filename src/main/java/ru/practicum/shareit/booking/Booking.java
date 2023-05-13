@@ -41,7 +41,4 @@ public class Booking {
     @Column(name ="status")
     @Enumerated(EnumType.STRING)
     private BookingState status;
-
-    @Column(name = "createDate")
-    private LocalDateTime createDate;
 }

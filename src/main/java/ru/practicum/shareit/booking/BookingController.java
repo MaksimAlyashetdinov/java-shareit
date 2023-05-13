@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingDtoToResponse;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.booking.utils.BookingMapper;
 
@@ -33,7 +34,7 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}")
     public Booking changeStateOfBooking(@PathVariable Long bookingId, @RequestParam("approved") boolean approved, @RequestHeader("X-Sharer-User-Id") Long userId) {
-        return bookingService.changeStateOfBooking(bookingId, approved, userId);
+        return bookingService.approveBooking(bookingId, approved, userId);
     }
 
     @GetMapping("/{bookingId}")
@@ -42,12 +43,12 @@ public class BookingController {
     }
 
     @GetMapping
-    public List<Booking> getByStateAndUserId(@RequestParam(value = "state", required = false) String state, @RequestHeader("X-Sharer-User-Id") Long userId) {
+    public List<BookingDtoToResponse> getByStateAndUserId(@RequestParam(value = "state", required = false) String state, @RequestHeader("X-Sharer-User-Id") Long userId) {
         return bookingService.getByStateAndUserId(state, userId);
     }
 
     @GetMapping("/owner")
-    public List<Booking> getByItemOwnerIdAndState(@RequestParam(value = "state", required = false) String state, @RequestHeader("X-Sharer-User-Id") Long userId) {
+    public List<BookingDtoToResponse> getByItemOwnerIdAndState(@RequestParam(value = "state", required = false) String state, @RequestHeader("X-Sharer-User-Id") Long userId) {
         return bookingService.getByItemOwnerIdAndState(state, userId);
     }
 }

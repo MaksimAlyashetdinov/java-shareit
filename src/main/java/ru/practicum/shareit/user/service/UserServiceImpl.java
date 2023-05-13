@@ -22,7 +22,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAll() {
         List<User> users = userStorage.findAll();
-        log.info("List of all users: " + users.size());
+        log.info("Get all users: " + users);
         return users;
     }
 
@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getById(Long id) {
         User user = userStorage.findById(id).orElseThrow(() -> new NotFoundException("User not found."));
-        log.info("Requested user with ID = " + id);
+        log.info("Get user: " + user);
         return user;
     }
 

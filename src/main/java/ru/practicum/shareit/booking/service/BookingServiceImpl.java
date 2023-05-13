@@ -4,13 +4,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingState;
+import ru.practicum.shareit.booking.dto.BookingDtoToResponse;
 import ru.practicum.shareit.booking.storage.BookingStorage;
+import ru.practicum.shareit.booking.utils.BookingMapper;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.model.Item;
@@ -27,6 +30,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingStorage bookingStorage;
     private final ItemStorage itemStorage;
     private final UserStorage userStorage;
+    private final BookingMapper bookingMapper;
 
     @Override
     public Booking create(long userId, Booking booking) {
@@ -39,7 +43,7 @@ public class BookingServiceImpl implements BookingService {
         checkItemState(booking, item);
         booking.setBooker(booker);
         booking.setStatus(BookingState.WAITING);
-        booking.setCreateDate(LocalDateTime.now());
+        //booking.setCreateDate(LocalDateTime.now());
         log.info("Booking successfully added: " + booking);
         return bookingStorage.save(booking);
     }
@@ -53,11 +57,11 @@ public class BookingServiceImpl implements BookingService {
             throw new NotFoundException(
                     "The user does not have access to the requested booking.");
         }
-        log.info("Requested booking with ID = " + id);
+        log.info("Get booking " + booking);
         return booking;
     }
 
-    @Override
+    /*@Override
     public Booking update(Booking booking) {
         Booking bookingFromStorage = containsBooking(booking.getId());
         if (booking.getItem() != null) {
@@ -80,29 +84,29 @@ public class BookingServiceImpl implements BookingService {
         }
         log.info("Booking successfully updated: " + bookingFromStorage);
         return bookingStorage.save(bookingFromStorage);
-    }
+    }*/
 
-    @Override
+    /*@Override
     public void delete(long id) {
         Booking booking = containsBooking(id);
         log.info("Deleted booking with id: {}", id);
         bookingStorage.delete(booking);
-    }
+    }*/
 
-    @Override
+    /*@Override
     public List<Booking> getAllByUserId(long id) {
         containsUser(id);
         return bookingStorage.findAllByBookerId(id);
-    }
+    }*/
 
-    @Override
+    /*@Override
     public List<Booking> getAllByOwnerId(long id) {
         containsUser(id);
         return bookingStorage.findAllByItemOwnerId(id);
-    }
+    }*/
 
     @Override
-    public Booking changeStateOfBooking(long id, boolean approved, long userId) {
+    public Booking approveBooking(long id, boolean approved, long userId) {
         Booking booking = containsBooking(id);
         containsUser(userId);
         if (booking.getItem().getOwnerId() != userId) {
@@ -116,29 +120,31 @@ public class BookingServiceImpl implements BookingService {
         } else {
             booking.setStatus(BookingState.REJECTED);
         }
+        log.info("Approve/rejected booking: " + booking);
         return bookingStorage.save(booking);
     }
 
     @Override
-    public List<Booking> getByStateAndUserId(String state, long userId) {
+    public List<BookingDtoToResponse> getByStateAndUserId(String state, long userId) {
         containsUser(userId);
         List<Booking> bookingsByUserId = bookingStorage.findAllByBookerId(userId);
         return getBookingsByState(bookingsByUserId, state);
     }
 
     @Override
-    public List<Booking> getByItemOwnerIdAndState(String state, long userId) {
+    public List<BookingDtoToResponse> getByItemOwnerIdAndState(String state, long userId) {
         containsUser(userId);
         List<Booking> bookingsByItemOwnerId = bookingStorage.findAllByItemOwnerId(userId);
         return getBookingsByState(bookingsByItemOwnerId, state);
     }
 
-    private List<Booking> getBookingsByState(List<Booking> bookings, String state) {
+    private List<BookingDtoToResponse> getBookingsByState(List<Booking> bookings, String state) {
         List<Booking> resultBookings = new ArrayList<>();
         if (state == null || state.equals("ALL")) {
             resultBookings = bookings;
             resultBookings.sort(Comparator.comparing(Booking::getStart).reversed());
-            return resultBookings;
+            return resultBookings.stream().map(booking -> bookingMapper.toBookingDtoToResponse(booking)).collect(
+                    Collectors.toList());
         }
         switch (state) {
             case "CURRENT":
@@ -150,7 +156,7 @@ public class BookingServiceImpl implements BookingService {
                     }
                 }
                 break;
-            case "**PAST**":
+            case "PAST":
                 for (Booking booking : bookings) {
                     if (booking.getEnd().isBefore(LocalDateTime.now())) {
                         resultBookings.add(booking);
@@ -183,7 +189,9 @@ public class BookingServiceImpl implements BookingService {
             default: throw new ValidationException("Unknown state: " + state);
         }
         resultBookings.sort(Comparator.comparing(Booking::getStart).reversed());
-        return resultBookings;
+        log.info("Get bookings by user id and state: " + resultBookings);
+        return resultBookings.stream().map(booking -> bookingMapper.toBookingDtoToResponse(booking)).collect(
+                Collectors.toList());
     }
 
     private void validateBooking(Booking booking) {

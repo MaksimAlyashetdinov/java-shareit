@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentDtoRequest;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
 
@@ -58,8 +59,11 @@ public class ItemController {
     }
 
     @PostMapping("/{itemId}/comment")
-        public Comment addCommentToItem(@RequestHeader("X-Sharer-User-Id") Long userId,
-            @PathVariable Long itemId, @RequestBody String text) {
-        return itemService.addCommentToItem(userId, itemId, text);
+        public CommentDto addCommentToItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+            @PathVariable Long itemId, @RequestBody CommentDtoRequest comment) {
+        long user = userId;
+        long item = itemId;
+        CommentDtoRequest commentDtoRequest = comment;
+        return itemService.addCommentToItem(userId, itemId, comment);
     }
 }

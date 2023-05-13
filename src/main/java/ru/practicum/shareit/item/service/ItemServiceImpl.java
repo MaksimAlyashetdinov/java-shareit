@@ -1,6 +1,6 @@
 package ru.practicum.shareit.item.service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -8,17 +8,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingState;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.storage.BookingStorage;
 import ru.practicum.shareit.booking.utils.BookingMapper;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentDtoRequest;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.CommentRepository;
 import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.item.utils.CommentMapper;
 import ru.practicum.shareit.item.utils.ItemMapper;
+import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.storage.UserStorage;
 
 @Service
@@ -33,6 +39,7 @@ public class ItemServiceImpl implements ItemService {
     private final CommentRepository commentRepository;
     private final ItemMapper itemMapper;
     private final BookingMapper bookingMapper;
+    private final CommentMapper commentMapper;
 
     @Override
     public Item createItem(Long userId, Item item) {
@@ -46,15 +53,16 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDto getById(Long userId, Long itemId) {
         Item item = itemStorage.findById(itemId).orElseThrow(() -> new NotFoundException("Item not found."));
-        log.info("Requested item with ID = " + itemId);
         if (userId == item.getOwnerId()) {
             ItemDto result = itemMapper.mapToItemDtoWithBookings(item);
             if (result.getNextBooking() != null) {
                 BookingDto nextBooking = result.getNextBooking();
                 System.out.println("Get ITEM: " + result + ". Next Booking : " + bookingMapper.mapToBooking(nextBooking));
             }
+            log.info("Get item with bookings: " + result);
             return result;
         }
+        log.info("Get item: " + item);
         return itemMapper.mapToItemDto(item);
     }
 
@@ -65,8 +73,7 @@ public class ItemServiceImpl implements ItemService {
             return new ArrayList<>();
         }
         List<Item> items = itemStorage.findAllByName(name);
-        log.info("List of all items with name {}: " + items.size(),
-                name);
+        log.info("Get items by name: " + items);
         return items;
     }
 
@@ -74,9 +81,9 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> getAllItemsByUserId(Long userId) {
         containsUser(userId);
         List<Item> items = itemStorage.findAllByOwnerId(userId);
-        log.info(
-                "List of all items for user with id {}: " + items.size(), userId);
-        return items.stream().map(i -> itemMapper.mapToItemDtoWithBookings(i)).collect(Collectors.toList());
+        List<ItemDto> itemsDto = items.stream().map(i -> itemMapper.mapToItemDtoWithBookings(i)).collect(Collectors.toList());
+        log.info("Get items by user id: " + itemsDto);
+        return itemsDto;
     }
 
     @Override
@@ -96,7 +103,7 @@ public class ItemServiceImpl implements ItemService {
         if (item.getAvailable() != null) {
             itemFromStorage.setAvailable(item.getAvailable());
         }
-        log.info("Item successfully updated: " + itemFromStorage);
+        log.info("Item updated: " + itemFromStorage);
         return itemStorage.save(itemFromStorage);
     }
 
@@ -108,25 +115,26 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Comment addCommentToItem(Long userId, Long itemId, String text) {
-        containsUser(userId);
-        //Item item = itemStorage.findById(itemId).orElseThrow(() -> new NotFoundException("Item not found."));
-        if (!bookingStorage.findAllByBookerId(userId).stream().anyMatch(booking -> booking.getItem().getId().equals(itemId))) {
+    public CommentDto addCommentToItem(Long userId, Long itemId, CommentDtoRequest commentDtoRequest) {
+        User user = containsUser(userId);
+        Item item = itemStorage.findById(itemId).orElseThrow(() -> new NotFoundException("Item not found."));
+        if (commentDtoRequest == null || commentDtoRequest.getText().isBlank()) {
+            throw new ValidationException("Text of comment can't be empty.");
+        }
+        List<Booking> userBookingsByItemId = bookingStorage.findAllByBookerId(userId).stream().filter(booking -> booking.getItem().getId().equals(itemId)).filter(booking -> booking.getStatus().equals(
+                BookingState.APPROVED)).filter(booking -> booking.getEnd().isBefore(LocalDateTime.now())).collect(Collectors.toList());
+        if (userBookingsByItemId.size() == 0) {
             throw new ValidationException("This user can't add comment to this item.");
         }
-        Comment comment = new Comment();
-        comment.setUserId(userId);
-        comment.setItemId(itemId);
-        comment.setText(text);
-        comment.setCreateDate(LocalDate.now());
-        commentRepository.save(comment);
-        return comment;
+        Comment comment = commentMapper.toComment(user, item, commentDtoRequest, LocalDateTime.now());
+        //commentRepository.save(comment);
+        log.info("Add comment: " + comment);
+        return commentMapper.toCommentDto(commentRepository.save(comment));
     }
 
-    private void containsUser(Long id) {
-        if (userStorage.findById(id).isEmpty()) {
-            throw new NotFoundException("User with id = " + id + " not exist.");
-        }
+    private User containsUser(Long id) {
+        User user = userStorage.findById(id).orElseThrow(() -> new NotFoundException("User with id = " + id + " not exist."));
+            return user;
     }
 
     private void validateItem(Item item) {
