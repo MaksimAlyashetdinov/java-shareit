@@ -8,6 +8,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class ItemDtoShort {
+
     private Long id;
     private String name;
 }

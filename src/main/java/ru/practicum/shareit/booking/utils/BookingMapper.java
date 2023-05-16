@@ -3,24 +3,17 @@ package ru.practicum.shareit.booking.utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingState;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoToResponse;
-import ru.practicum.shareit.booking.storage.BookingStorage;
-import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDtoShort;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.storage.ItemStorage;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.storage.UserStorage;
 
 @Component
 @RequiredArgsConstructor
 public class BookingMapper {
-
-    private final ItemStorage itemStorage;
-    private final UserStorage userStorage;
-    private final BookingStorage bookingStorage;
 
     public BookingDto mapToBookingDto(Booking booking) {
         BookingDto dto = new BookingDto();
@@ -32,17 +25,12 @@ public class BookingMapper {
         return dto;
     }
 
-    public Booking mapToBooking(BookingDto dto) {
+    public Booking mapToBooking(BookingDto dto, Item item, User booker, BookingState state) {
         Booking booking = new Booking();
         booking.setId(dto.getId());
-        Item item = itemStorage.findById(dto.getItemId()).orElseThrow(() -> new NotFoundException("Item not found."));
         booking.setItem(item);
-        User booker = userStorage.findById(dto.getBookerId()).orElseThrow(() -> new NotFoundException("User not found."));
         booking.setBooker(booker);
-        if (booking.getId() != null) {
-            Booking bookingFromStorage = bookingStorage.findById(booking.getId()).orElseThrow(() -> new NotFoundException("Booking not found."));
-            booking.setStatus(bookingFromStorage.getStatus());
-        }
+        booking.setStatus(state);
         booking.setStart(dto.getStart());
         booking.setEnd(dto.getEnd());
         return booking;
@@ -54,7 +42,8 @@ public class BookingMapper {
         Item item = booking.getItem();
         bookingDtoToResponse.setItem(new ItemDtoShort(item.getId(), item.getName()));
         User booker = booking.getBooker();
-        bookingDtoToResponse.setBooker(new UserDto(booker.getId(), booker.getName(), booker.getEmail()));
+        bookingDtoToResponse.setBooker(
+                new UserDto(booker.getId(), booker.getName(), booker.getEmail()));
         bookingDtoToResponse.setStatus(booking.getStatus());
         bookingDtoToResponse.setStart(booking.getStart());
         bookingDtoToResponse.setEnd(booking.getEnd());

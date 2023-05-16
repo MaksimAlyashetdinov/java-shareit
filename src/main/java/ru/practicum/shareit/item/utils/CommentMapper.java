@@ -12,18 +12,19 @@ import ru.practicum.shareit.user.User;
 @Component
 @RequiredArgsConstructor
 public class CommentMapper {
+
     public CommentDto toCommentDto(Comment comment) {
         CommentDto commentDto = new CommentDto();
         commentDto.setId(comment.getId());
         commentDto.setText(comment.getText());
         commentDto.setAuthorName(comment.getAuthor().getName());
-                commentDto.setCreated(comment.getCreated());
+        commentDto.setCreated(comment.getCreated());
         return commentDto;
-
     }
-    public Comment toComment(User author, Item item, CommentDtoRequest commentDtoRequest, LocalDateTime now) {
+
+    public Comment toComment(User author, Item item, CommentDtoRequest commentDtoRequest,
+            LocalDateTime now) {
         Comment comment = new Comment();
-        //comment.setId(commentDtoRequest.getId());
         comment.setText(commentDtoRequest.getText());
         comment.setAuthor(author);
         comment.setItem(item);

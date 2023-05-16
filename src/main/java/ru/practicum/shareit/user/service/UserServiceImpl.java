@@ -36,11 +36,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(Long userId, User user) {
-        User userFromStorage = userStorage.findById(userId).orElseThrow(() -> new NotFoundException("User with not found."));
-        /*if (!userFromStorage.getEmail().equals(user.getEmail())) {
-            containsEmail(user.getEmail());
-        }*/
-        if (user.getName() != null && !user.getName().isBlank()) {
+        User userFromStorage = userStorage.findById(userId)
+                                          .orElseThrow(() -> new NotFoundException(
+                                                  "User with not found."));
+        if (user.getName() != null && !user.getName()
+                                           .isBlank()) {
             userFromStorage.setName(user.getName());
         }
         if (user.getEmail() != null) {
@@ -52,14 +52,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void delete(Long id) {
-        User user = userStorage.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+        User user = userStorage.findById(id)
+                               .orElseThrow(() -> new NotFoundException("User not found"));
         log.info("Deleted user with id: {}", id);
         userStorage.delete(user);
     }
 
     @Override
     public User getById(Long id) {
-        User user = userStorage.findById(id).orElseThrow(() -> new NotFoundException("User not found."));
+        User user = userStorage.findById(id)
+                               .orElseThrow(() -> new NotFoundException("User not found."));
         log.info("Get user: " + user);
         return user;
     }
