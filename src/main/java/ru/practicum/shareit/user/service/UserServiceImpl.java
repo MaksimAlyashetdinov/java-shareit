@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User update(Long userId, User user) {
+    public User update(long userId, User user) {
         User userFromStorage = userStorage.findById(userId)
                                           .orElseThrow(() -> new NotFoundException(
                                                   "User with not found."));
@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void delete(Long id) {
+    public void delete(long id) {
         User user = userStorage.findById(id)
                                .orElseThrow(() -> new NotFoundException("User not found"));
         log.info("Deleted user with id: {}", id);
@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getById(Long id) {
+    public User getById(long id) {
         User user = userStorage.findById(id)
                                .orElseThrow(() -> new NotFoundException("User not found."));
         log.info("Get user: " + user);

@@ -43,7 +43,7 @@ public class ItemServiceImpl implements ItemService {
     private final CommentMapper commentMapper;
 
     @Override
-    public Item createItem(Long userId, Item item) {
+    public Item createItem(long userId, Item item) {
         validateItem(item);
         containsUser(userId);
         item.setOwnerId(userId);
@@ -52,7 +52,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto getById(Long userId, Long itemId) {
+    public ItemDto getById(long userId, long itemId) {
         Item item = containsItem(itemId);
         List<Comment> comments = commentRepository.findAllByItemId(item.getId());
         List<CommentDto> commentsDto = null;
@@ -109,7 +109,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> getAllItemsByUserId(Long userId) {
+    public List<ItemDto> getAllItemsByUserId(long userId) {
         containsUser(userId);
         List<Item> items = itemStorage.findAllByOwnerId(userId);
         List<ItemDto> itemsDto = items.stream()
@@ -120,7 +120,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Item updateItem(Long userId, Long itemId, Item item) {
+    public Item updateItem(long userId, long itemId, Item item) {
         containsUser(userId);
         Item itemFromStorage = containsItem(itemId);
         if (itemFromStorage.getOwnerId() != userId) {
@@ -143,14 +143,14 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public void deleteItem(Long itemId) {
+    public void deleteItem(long itemId) {
         Item item = containsItem(itemId);
         log.info("Deleted item with id: {}", itemId);
         itemStorage.delete(item);
     }
 
     @Override
-    public CommentDto addCommentToItem(Long userId, Long itemId,
+    public CommentDto addCommentToItem(long userId, long itemId,
             CommentDtoRequest commentDtoRequest) {
         User user = containsUser(userId);
         Item item = containsItem(itemId);
@@ -179,7 +179,7 @@ public class ItemServiceImpl implements ItemService {
         return commentMapper.toCommentDto(commentRepository.save(comment));
     }
 
-    private User containsUser(Long id) {
+    private User containsUser(long id) {
         return userStorage.findById(id)
                           .orElseThrow(() -> new NotFoundException(
                                   "User with id = " + id + " not exist."));

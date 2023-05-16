@@ -8,17 +8,17 @@ import ru.practicum.shareit.item.model.Item;
 
 public interface ItemService {
 
-    Item createItem(Long userId, Item item);
+    Item createItem(long userId, Item item);
 
-    ItemDto getById(Long userId, Long itemId);
+    ItemDto getById(long userId, long itemId);
 
     List<Item> getByName(String title);
 
-    List<ItemDto> getAllItemsByUserId(Long userId);
+    List<ItemDto> getAllItemsByUserId(long userId);
 
-    Item updateItem(Long userId, Long itemId, Item item);
+    Item updateItem(long userId, long itemId, Item item);
 
-    void deleteItem(Long itemId);
+    void deleteItem(long itemId);
 
-    CommentDto addCommentToItem(Long userId, Long itemId, CommentDtoRequest comment);
+    CommentDto addCommentToItem(long userId, long itemId, CommentDtoRequest comment);
 }

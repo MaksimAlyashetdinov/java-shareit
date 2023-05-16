@@ -9,11 +9,11 @@ public interface UserService {
 
     User create(User user);
 
-    User update(Long userId, User user);
+    User update(long userId, User user);
 
-    void delete(Long id);
+    void delete(long id);
 
-    User getById(Long id);
+    User getById(long id);
 
     void containsEmail(String email);
 }
