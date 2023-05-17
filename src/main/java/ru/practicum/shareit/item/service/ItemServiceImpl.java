@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingState;
 import ru.practicum.shareit.booking.dto.BookingDto;
-import ru.practicum.shareit.booking.storage.BookingStorage;
+import ru.practicum.shareit.booking.storage.BookingRepository;
 import ru.practicum.shareit.booking.utils.BookingMapper;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -22,11 +22,11 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.CommentRepository;
-import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.item.utils.CommentMapper;
 import ru.practicum.shareit.item.utils.ItemMapper;
 import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.storage.UserRepository;
 
 @Service
 @Slf4j
@@ -34,9 +34,9 @@ import ru.practicum.shareit.user.storage.UserStorage;
 @Transactional
 public class ItemServiceImpl implements ItemService {
 
-    private final ItemStorage itemStorage;
-    private final UserStorage userStorage;
-    private final BookingStorage bookingStorage;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
     private final ItemMapper itemMapper;
     private final BookingMapper bookingMapper;
@@ -48,24 +48,25 @@ public class ItemServiceImpl implements ItemService {
         containsUser(userId);
         item.setOwnerId(userId);
         log.info("Item successfully added: " + item);
-        return itemStorage.save(item);
+        return itemRepository.save(item);
     }
 
     @Override
     public ItemDto getById(long userId, long itemId) {
-        Item item = containsItem(itemId);
+        Item item = itemRepository.findById(itemId)
+                                  .orElseThrow(() -> new NotFoundException("Item not found."));
         List<Comment> comments = commentRepository.findAllByItemId(item.getId());
         List<CommentDto> commentsDto = null;
         if (comments.size() > 0) {
-            commentsDto = comments.stream().map(comment -> commentMapper.toCommentDto(comment)).collect(
-                    Collectors.toList());
+            commentsDto = comments.stream()
+                                  .map(comment -> commentMapper.toCommentDto(comment))
+                                  .collect(Collectors.toList());
         }
         if (userId == item.getOwnerId()) {
-            List<Booking> bookings = bookingStorage.findAllByItemId(itemId);
+            List<Booking> bookings = bookingRepository.findByItemId(itemId);
             Optional<Booking> lastBooking = bookings.stream()
                                                     .filter(booking -> booking.getStart()
-                                                                              .isBefore(
-                                                                                      LocalDateTime.now()))
+                                                                              .isBefore(LocalDateTime.now()))
                                                     .filter(booking -> !booking.getStatus()
                                                                                .equals(BookingState.REJECTED))
                                                     .sorted((b1, b2) -> b2.getStart()
@@ -77,8 +78,7 @@ public class ItemServiceImpl implements ItemService {
             }
             Optional<Booking> nextBooking = bookings.stream()
                                                     .filter(booking -> booking.getStart()
-                                                                              .isAfter(
-                                                                                      LocalDateTime.now()))
+                                                                              .isAfter(LocalDateTime.now()))
                                                     .filter(booking -> !booking.getStatus()
                                                                                .equals(BookingState.REJECTED))
                                                     .sorted((b1, b2) -> b1.getStart()
@@ -103,7 +103,7 @@ public class ItemServiceImpl implements ItemService {
             log.info("Get list with empty items name.");
             return new ArrayList<>();
         }
-        List<Item> items = itemStorage.findAllByName(name);
+        List<Item> items = itemRepository.findAllByName(name);
         log.info("Get items by name: " + items);
         return items;
     }
@@ -111,7 +111,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> getAllItemsByUserId(long userId) {
         containsUser(userId);
-        List<Item> items = itemStorage.findAllByOwnerId(userId);
+        List<Item> items = itemRepository.findAllByOwnerId(userId);
         List<ItemDto> itemsDto = items.stream()
                                       .map(i -> getById(userId, i.getId()))
                                       .collect(Collectors.toList());
@@ -122,54 +122,58 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public Item updateItem(long userId, long itemId, Item item) {
         containsUser(userId);
-        Item itemFromStorage = containsItem(itemId);
-        if (itemFromStorage.getOwnerId() != userId) {
+        Item itemFromRepository = itemRepository.findById(itemId)
+                                                .orElseThrow(() -> new NotFoundException("Item not found."));
+        if (itemFromRepository.getOwnerId() != userId) {
             throw new NotFoundException(
-                    "This item can update only user with id = " + itemFromStorage.getOwnerId());
+                    "This item can update only user with id = " + itemFromRepository.getOwnerId());
         }
         if (item.getName() != null && !item.getName()
                                            .isBlank()) {
-            itemFromStorage.setName(item.getName());
+            itemFromRepository.setName(item.getName());
         }
         if (item.getDescription() != null && !item.getDescription()
                                                   .isBlank()) {
-            itemFromStorage.setDescription(item.getDescription());
+            itemFromRepository.setDescription(item.getDescription());
         }
         if (item.getAvailable() != null) {
-            itemFromStorage.setAvailable(item.getAvailable());
+            itemFromRepository.setAvailable(item.getAvailable());
         }
-        log.info("Item updated: " + itemFromStorage);
-        return itemStorage.save(itemFromStorage);
+        log.info("Item updated: " + itemFromRepository);
+        return itemRepository.save(itemFromRepository);
     }
 
     @Override
     public void deleteItem(long itemId) {
-        Item item = containsItem(itemId);
+        Item item = itemRepository.findById(itemId)
+                                  .orElseThrow(() -> new NotFoundException("Item not found."));
         log.info("Deleted item with id: {}", itemId);
-        itemStorage.delete(item);
+        itemRepository.delete(item);
     }
 
     @Override
     public CommentDto addCommentToItem(long userId, long itemId,
             CommentDtoRequest commentDtoRequest) {
-        User user = containsUser(userId);
-        Item item = containsItem(itemId);
+        User user = userRepository.findById(userId)
+                                  .orElseThrow(() -> new NotFoundException("User not found."));
+        Item item = itemRepository.findById(itemId)
+                                  .orElseThrow(() -> new NotFoundException("Item not found."));
         if (commentDtoRequest == null || commentDtoRequest.getText()
                                                           .isBlank()) {
             throw new ValidationException("Text of comment can't be empty.");
         }
-        List<Booking> userBookingsByItemId = bookingStorage.findAllByBookerId(userId)
-                                                           .stream()
-                                                           .filter(booking -> booking.getItem()
-                                                                                     .getId()
-                                                                                     .equals(itemId))
-                                                           .filter(booking -> booking.getStatus()
-                                                                                     .equals(
-                                                                                             BookingState.APPROVED))
-                                                           .filter(booking -> booking.getEnd()
-                                                                                     .isBefore(
-                                                                                             LocalDateTime.now()))
-                                                           .collect(Collectors.toList());
+        List<Booking> userBookingsByItemId = bookingRepository.findByBookerId(userId)
+                                                              .stream()
+                                                              .filter(booking -> booking.getItem()
+                                                                                        .getId()
+                                                                                        .equals(itemId))
+                                                              .filter(booking -> booking.getStatus()
+                                                                                        .equals(
+                                                                                                BookingState.APPROVED))
+                                                              .filter(booking -> booking.getEnd()
+                                                                                        .isBefore(
+                                                                                                LocalDateTime.now()))
+                                                              .collect(Collectors.toList());
         if (userBookingsByItemId.size() == 0) {
             throw new ValidationException("This user can't add comment to this item.");
         }
@@ -179,15 +183,11 @@ public class ItemServiceImpl implements ItemService {
         return commentMapper.toCommentDto(commentRepository.save(comment));
     }
 
-    private User containsUser(long id) {
-        return userStorage.findById(id)
-                          .orElseThrow(() -> new NotFoundException(
-                                  "User with id = " + id + " not exist."));
-    }
-
-    private Item containsItem(long id) {
-        return itemStorage.findById(id)
-                          .orElseThrow(() -> new NotFoundException("Item not found."));
+    private void containsUser(long id) {
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException(
+                    "User with id = " + id + " not exist.");
+        }
     }
 
     private void validateItem(Item item) {

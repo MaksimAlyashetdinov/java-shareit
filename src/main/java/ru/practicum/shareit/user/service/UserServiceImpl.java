@@ -6,10 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ObjectAlreadyExistsException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.storage.UserRepository;
 
 @Service
 @Slf4j
@@ -17,11 +16,11 @@ import ru.practicum.shareit.user.storage.UserStorage;
 @Transactional
 public class UserServiceImpl implements UserService {
 
-    private final UserStorage userStorage;
+    private final UserRepository userRepository;
 
     @Override
     public List<User> getAll() {
-        List<User> users = userStorage.findAll();
+        List<User> users = userRepository.findAll();
         log.info("Get all users: " + users);
         return users;
     }
@@ -29,16 +28,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public User create(User user) {
         validate(user);
-        //containsEmail(user.getEmail());
         log.info("User successfully added: " + user);
-        return userStorage.save(user);
+        return userRepository.save(user);
     }
 
     @Override
     public User update(long userId, User user) {
-        User userFromStorage = userStorage.findById(userId)
-                                          .orElseThrow(() -> new NotFoundException(
-                                                  "User with not found."));
+        User userFromStorage = userRepository.findById(userId)
+                                             .orElseThrow(() -> new NotFoundException(
+                                                     "User with not found."));
         if (user.getName() != null && !user.getName()
                                            .isBlank()) {
             userFromStorage.setName(user.getName());
@@ -47,31 +45,23 @@ public class UserServiceImpl implements UserService {
             userFromStorage.setEmail(user.getEmail());
         }
         log.info("User successfully updated: " + userFromStorage);
-        return userStorage.save(userFromStorage);
+        return userRepository.save(userFromStorage);
     }
 
     @Override
     public void delete(long id) {
-        User user = userStorage.findById(id)
-                               .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = userRepository.findById(id)
+                                  .orElseThrow(() -> new NotFoundException("User not found"));
         log.info("Deleted user with id: {}", id);
-        userStorage.delete(user);
+        userRepository.delete(user);
     }
 
     @Override
     public User getById(long id) {
-        User user = userStorage.findById(id)
-                               .orElseThrow(() -> new NotFoundException("User not found."));
+        User user = userRepository.findById(id)
+                                  .orElseThrow(() -> new NotFoundException("User not found."));
         log.info("Get user: " + user);
         return user;
-    }
-
-    @Override
-    public void containsEmail(String email) {
-        if (userStorage.findByEmail(email) != null) {
-            throw new ObjectAlreadyExistsException(
-                    "User with email = " + email + " already exists.");
-        }
     }
 
     private void validate(User user) {

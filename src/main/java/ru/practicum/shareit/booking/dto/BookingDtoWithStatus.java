@@ -15,7 +15,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class BookingDtoToResponse {
+public class BookingDtoWithStatus {
 
     private Long id;
     private ItemDtoShort item;

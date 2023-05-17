@@ -14,6 +14,4 @@ public interface UserService {
     void delete(long id);
 
     User getById(long id);
-
-    void containsEmail(String email);
 }
