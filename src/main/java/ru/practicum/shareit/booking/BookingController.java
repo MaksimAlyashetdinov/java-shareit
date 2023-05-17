@@ -21,7 +21,7 @@ import ru.practicum.shareit.booking.service.BookingService;
 @RequiredArgsConstructor
 public class BookingController {
 
-    private final String HEADER = "X-Sharer-User-Id";
+    private static final String HEADER = "X-Sharer-User-Id";
 
     private final BookingService bookingService;
 
