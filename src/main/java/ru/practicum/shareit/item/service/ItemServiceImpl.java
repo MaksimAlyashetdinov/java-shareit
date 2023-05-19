@@ -1,42 +1,85 @@
 package ru.practicum.shareit.item.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingState;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.storage.BookingRepository;
+import ru.practicum.shareit.booking.utils.BookingMapper;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentDtoRequest;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.storage.ItemStorage;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.item.storage.CommentRepository;
+import ru.practicum.shareit.item.storage.ItemRepository;
+import ru.practicum.shareit.item.utils.CommentMapper;
+import ru.practicum.shareit.item.utils.ItemMapper;
+import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.storage.UserRepository;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
+@Transactional
 public class ItemServiceImpl implements ItemService {
 
-    private final ItemStorage itemStorage;
-    private final UserStorage userStorage;
-
-    public ItemServiceImpl(ItemStorage itemStorage,
-            UserStorage userStorage) {
-        this.itemStorage = itemStorage;
-        this.userStorage = userStorage;
-    }
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
+    private final CommentRepository commentRepository;
+    private final ItemMapper itemMapper;
+    private final BookingMapper bookingMapper;
+    private final CommentMapper commentMapper;
 
     @Override
-    public Item createItem(Long userId, Item item) {
-        containsUser(userId);
+    public Item createItem(long userId, Item item) {
         validateItem(item);
+        containsUser(userId);
         item.setOwnerId(userId);
         log.info("Item successfully added: " + item);
-        return itemStorage.create(item);
+        return itemRepository.save(item);
     }
 
     @Override
-    public Item getById(Long itemId) {
-        containsItem(itemId);
-        log.info("Requested item with ID = " + itemId);
-        return itemStorage.getById(itemId);
+    public ItemDto getById(long userId, long itemId) {
+        Item item = itemRepository.findById(itemId)
+                                  .orElseThrow(() -> new NotFoundException("Item not found."));
+        List<Comment> comments = commentRepository.findAllByItemId(item.getId());
+        List<CommentDto> commentsDto = null;
+        if (comments.size() > 0) {
+            commentsDto = comments.stream()
+                                  .map(comment -> commentMapper.toCommentDto(comment))
+                                  .collect(Collectors.toList());
+        }
+        if (userId == item.getOwnerId()) {
+            List<Booking> bookings = bookingRepository.findByItemId(itemId);
+            Booking lastBooking = bookingRepository.findFirstByItemIdAndStartIsBeforeAndStatusIsOrderByStartDesc(itemId, LocalDateTime.now(), BookingState.APPROVED);
+            BookingDto lastBookingDto = null;
+            if (lastBooking != null) {
+                lastBookingDto = bookingMapper.mapToBookingDto(lastBooking);
+            }
+            Booking nextBooking = bookingRepository.findFirstByItemIdAndStartIsAfterAndStatusIsOrderByStartAsc(itemId, LocalDateTime.now(), BookingState.APPROVED);
+            BookingDto nextBookingDto = null;
+            if (nextBooking != null) {
+                nextBookingDto = bookingMapper.mapToBookingDto(nextBooking);
+            }
+            ItemDto itemWithBooking = itemMapper.mapToItemDtoWithBookings(item, lastBookingDto,
+                    nextBookingDto, commentsDto);
+            log.info("Get item with bookings: " + itemWithBooking);
+            return itemWithBooking;
+        }
+        log.info("Get item: " + item);
+        return itemMapper.mapToItemDto(item, commentsDto);
     }
 
     @Override
@@ -45,75 +88,92 @@ public class ItemServiceImpl implements ItemService {
             log.info("Get list with empty items name.");
             return new ArrayList<>();
         }
-        log.info("List of all items with name {}: " + itemStorage.getAllByName(name).size(),
-                name);
-        return itemStorage.getAllByName(name);
+        List<Item> items = itemRepository.findAllByName(name);
+        log.info("Get items by name: " + items);
+        return items;
     }
 
     @Override
-    public List<Item> getAllItemsByUserId(Long userId) {
+    public List<ItemDto> getAllItemsByUserId(long userId) {
         containsUser(userId);
-        log.info(
-                "List of all items for user with id {}: " + itemStorage.getAllItemsByUserId(
-                        userId).size(), userId);
-        return itemStorage.getAllItemsByUserId(userId);
+        List<Item> items = itemRepository.findAllByOwnerId(userId);
+        List<ItemDto> itemsDto = items.stream()
+                                      .map(i -> getById(userId, i.getId()))
+                                      .collect(Collectors.toList());
+        log.info("Get items by user id: " + itemsDto);
+        return itemsDto;
     }
 
     @Override
-    public Item updateItem(Long userId, Long itemId, Item item) {
+    public Item updateItem(long userId, long itemId, Item item) {
         containsUser(userId);
-        containsItem(itemId);
-        validateUpdateItem(userId, itemId);
-        Item itemFromMemory = getById(itemId);
-        if (item.getName() != null && !item.getName().isBlank()) {
-            itemFromMemory.setName(item.getName());
+        Item itemFromRepository = itemRepository.findById(itemId)
+                                                .orElseThrow(() -> new NotFoundException("Item not found."));
+        if (itemFromRepository.getOwnerId() != userId) {
+            throw new NotFoundException(
+                    "This item can update only user with id = " + itemFromRepository.getOwnerId());
         }
-        if (item.getDescription() != null && !item.getDescription().isBlank()) {
-            itemFromMemory.setDescription(item.getDescription());
+        if (item.getName() != null && !item.getName()
+                                           .isBlank()) {
+            itemFromRepository.setName(item.getName());
+        }
+        if (item.getDescription() != null && !item.getDescription()
+                                                  .isBlank()) {
+            itemFromRepository.setDescription(item.getDescription());
         }
         if (item.getAvailable() != null) {
-            itemFromMemory.setAvailable(item.getAvailable());
+            itemFromRepository.setAvailable(item.getAvailable());
         }
-        log.info("Item successfully updated: " + itemFromMemory);
-        return itemStorage.update(itemId, itemFromMemory);
+        log.info("Item updated: " + itemFromRepository);
+        return itemRepository.save(itemFromRepository);
     }
 
     @Override
-    public void deleteItem(Long itemId) {
-        containsItem(itemId);
+    public void deleteItem(long itemId) {
+        Item item = itemRepository.findById(itemId)
+                                  .orElseThrow(() -> new NotFoundException("Item not found."));
         log.info("Deleted item with id: {}", itemId);
-        itemStorage.delete(itemId);
+        itemRepository.delete(item);
     }
 
-    private void containsItem(Long id) {
-        if (!itemStorage.containsItem(id)) {
-            throw new NotFoundException("Item with id = " + id + " not exist.");
+    @Override
+    public CommentDto addCommentToItem(long userId, long itemId,
+            CommentDtoRequest commentDtoRequest) {
+        User user = userRepository.findById(userId)
+                                  .orElseThrow(() -> new NotFoundException("User not found."));
+        Item item = itemRepository.findById(itemId)
+                                  .orElseThrow(() -> new NotFoundException("Item not found."));
+        if (commentDtoRequest == null || commentDtoRequest.getText()
+                                                          .isBlank()) {
+            throw new ValidationException("Text of comment can't be empty.");
         }
+        if (bookingRepository.findByItemIdAndBookerIdAndStatusAndEndIsBefore(itemId, userId, BookingState.APPROVED, LocalDateTime.now()).isEmpty()) {
+            throw new ValidationException("This user can't add comment to this item.");
+        }
+        Comment comment = commentMapper.toComment(user, item, commentDtoRequest,
+                LocalDateTime.now());
+        log.info("Add comment: " + comment);
+        return commentMapper.toCommentDto(commentRepository.save(comment));
     }
 
-    private void containsUser(Long id) {
-        if (!userStorage.containsUser(id)) {
-            throw new NotFoundException("User with id = " + id + " not exist.");
+    private void containsUser(long id) {
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException(
+                    "User with id = " + id + " not exist.");
         }
     }
 
     private void validateItem(Item item) {
-        if (item.getName() == null || item.getName().isBlank()) {
+        if (item.getName() == null || item.getName()
+                                          .isBlank()) {
             throw new ValidationException("You must specify the name.");
         }
-        if (item.getDescription() == null || item.getDescription().isBlank()) {
+        if (item.getDescription() == null || item.getDescription()
+                                                 .isBlank()) {
             throw new ValidationException("You must specify the description.");
         }
         if (item.getAvailable() == null) {
             throw new ValidationException("You must specify the available.");
-        }
-    }
-
-    private void validateUpdateItem(long userId, long itemId) {
-        Item itemFromMemory = itemStorage.getById(itemId);
-        if (itemFromMemory.getOwnerId() != userId) {
-            throw new NotFoundException(
-                    "This item can update only user with id = " + itemFromMemory.getOwnerId());
         }
     }
 }

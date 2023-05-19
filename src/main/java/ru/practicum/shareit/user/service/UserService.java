@@ -9,13 +9,9 @@ public interface UserService {
 
     User create(User user);
 
-    User update(Long userId, User user);
+    User update(long userId, User user);
 
-    void delete(Long id);
+    void delete(long id);
 
-    User getById(Long id);
-
-    void containsUser(Long id);
-
-    void containsEmail(String email);
+    User getById(long id);
 }

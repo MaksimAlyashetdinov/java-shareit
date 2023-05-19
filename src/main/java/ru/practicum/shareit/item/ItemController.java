@@ -2,6 +2,7 @@ package ru.practicum.shareit.item;
 
 import java.util.List;
 import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -12,31 +13,30 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentDtoRequest;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.user.service.UserService;
 
 @RestController
 @RequestMapping(path = "/items")
+@RequiredArgsConstructor
 public class ItemController {
 
     private final ItemService itemService;
-    private final UserService userService;
-
-    public ItemController(ItemService itemService, UserService userService) {
-        this.itemService = itemService;
-        this.userService = userService;
-    }
+    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    public Item createItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+    public Item createItem(@RequestHeader(USER_ID_HEADER) Long userId,
             @Valid @RequestBody Item item) {
         return itemService.createItem(userId, item);
     }
 
     @GetMapping("/{itemId}")
-    public Item getById(@PathVariable Long itemId) {
-        return itemService.getById(itemId);
+    public ItemDto getById(@RequestHeader(USER_ID_HEADER) Long userId,
+            @PathVariable Long itemId) {
+        return itemService.getById(userId, itemId);
     }
 
     @GetMapping("/search")
@@ -45,12 +45,12 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<Item> getAllItemsByUserId(@RequestHeader("X-Sharer-User-Id") Long userId) {
+    public List<ItemDto> getAllItemsByUserId(@RequestHeader(USER_ID_HEADER) Long userId) {
         return itemService.getAllItemsByUserId(userId);
     }
 
     @PatchMapping("/{itemId}")
-    public Item updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+    public Item updateItem(@RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long itemId, @Valid @RequestBody Item item) {
         return itemService.updateItem(userId, itemId, item);
     }
@@ -58,5 +58,14 @@ public class ItemController {
     @DeleteMapping("/{itemId}")
     public void deleteItem(@PathVariable Long itemId) {
         itemService.deleteItem(itemId);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto addCommentToItem(@RequestHeader(USER_ID_HEADER) Long userId,
+            @PathVariable Long itemId, @RequestBody CommentDtoRequest comment) {
+        long user = userId;
+        long item = itemId;
+        CommentDtoRequest commentDtoRequest = comment;
+        return itemService.addCommentToItem(userId, itemId, comment);
     }
 }
