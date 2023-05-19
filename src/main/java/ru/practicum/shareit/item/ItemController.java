@@ -25,16 +25,16 @@ import ru.practicum.shareit.item.service.ItemService;
 public class ItemController {
 
     private final ItemService itemService;
-    private static final String HEADER = "X-Sharer-User-Id";
+    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    public Item createItem(@RequestHeader(HEADER) Long userId,
+    public Item createItem(@RequestHeader(USER_ID_HEADER) Long userId,
             @Valid @RequestBody Item item) {
         return itemService.createItem(userId, item);
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getById(@RequestHeader(HEADER) Long userId,
+    public ItemDto getById(@RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long itemId) {
         return itemService.getById(userId, itemId);
     }
@@ -45,12 +45,12 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<ItemDto> getAllItemsByUserId(@RequestHeader(HEADER) Long userId) {
+    public List<ItemDto> getAllItemsByUserId(@RequestHeader(USER_ID_HEADER) Long userId) {
         return itemService.getAllItemsByUserId(userId);
     }
 
     @PatchMapping("/{itemId}")
-    public Item updateItem(@RequestHeader(HEADER) Long userId,
+    public Item updateItem(@RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long itemId, @Valid @RequestBody Item item) {
         return itemService.updateItem(userId, itemId, item);
     }
@@ -61,7 +61,7 @@ public class ItemController {
     }
 
     @PostMapping("/{itemId}/comment")
-    public CommentDto addCommentToItem(@RequestHeader(HEADER) Long userId,
+    public CommentDto addCommentToItem(@RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long itemId, @RequestBody CommentDtoRequest comment) {
         long user = userId;
         long item = itemId;

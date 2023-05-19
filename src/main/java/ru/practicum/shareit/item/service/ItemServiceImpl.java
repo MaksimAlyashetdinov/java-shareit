@@ -3,7 +3,6 @@ package ru.practicum.shareit.item.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,29 +63,15 @@ public class ItemServiceImpl implements ItemService {
         }
         if (userId == item.getOwnerId()) {
             List<Booking> bookings = bookingRepository.findByItemId(itemId);
-            Optional<Booking> lastBooking = bookings.stream()
-                                                    .filter(booking -> booking.getStart()
-                                                                              .isBefore(LocalDateTime.now()))
-                                                    .filter(booking -> !booking.getStatus()
-                                                                               .equals(BookingState.REJECTED))
-                                                    .sorted((b1, b2) -> b2.getStart()
-                                                                          .compareTo(b1.getStart()))
-                                                    .findFirst();
+            Booking lastBooking = bookingRepository.findFirstByItemIdAndStartIsBeforeAndStatusIsOrderByStartDesc(itemId, LocalDateTime.now(), BookingState.APPROVED);
             BookingDto lastBookingDto = null;
-            if (lastBooking.isPresent()) {
-                lastBookingDto = bookingMapper.mapToBookingDto(lastBooking.get());
+            if (lastBooking != null) {
+                lastBookingDto = bookingMapper.mapToBookingDto(lastBooking);
             }
-            Optional<Booking> nextBooking = bookings.stream()
-                                                    .filter(booking -> booking.getStart()
-                                                                              .isAfter(LocalDateTime.now()))
-                                                    .filter(booking -> !booking.getStatus()
-                                                                               .equals(BookingState.REJECTED))
-                                                    .sorted((b1, b2) -> b1.getStart()
-                                                                          .compareTo(b2.getStart()))
-                                                    .findFirst();
+            Booking nextBooking = bookingRepository.findFirstByItemIdAndStartIsAfterAndStatusIsOrderByStartAsc(itemId, LocalDateTime.now(), BookingState.APPROVED);
             BookingDto nextBookingDto = null;
-            if (nextBooking.isPresent()) {
-                nextBookingDto = bookingMapper.mapToBookingDto(nextBooking.get());
+            if (nextBooking != null) {
+                nextBookingDto = bookingMapper.mapToBookingDto(nextBooking);
             }
             ItemDto itemWithBooking = itemMapper.mapToItemDtoWithBookings(item, lastBookingDto,
                     nextBookingDto, commentsDto);
@@ -162,19 +147,7 @@ public class ItemServiceImpl implements ItemService {
                                                           .isBlank()) {
             throw new ValidationException("Text of comment can't be empty.");
         }
-        List<Booking> userBookingsByItemId = bookingRepository.findByBookerId(userId)
-                                                              .stream()
-                                                              .filter(booking -> booking.getItem()
-                                                                                        .getId()
-                                                                                        .equals(itemId))
-                                                              .filter(booking -> booking.getStatus()
-                                                                                        .equals(
-                                                                                                BookingState.APPROVED))
-                                                              .filter(booking -> booking.getEnd()
-                                                                                        .isBefore(
-                                                                                                LocalDateTime.now()))
-                                                              .collect(Collectors.toList());
-        if (userBookingsByItemId.size() == 0) {
+        if (bookingRepository.findByItemIdAndBookerIdAndStatusAndEndIsBefore(itemId, userId, BookingState.APPROVED, LocalDateTime.now()).isEmpty()) {
             throw new ValidationException("This user can't add comment to this item.");
         }
         Comment comment = commentMapper.toComment(user, item, commentDtoRequest,
