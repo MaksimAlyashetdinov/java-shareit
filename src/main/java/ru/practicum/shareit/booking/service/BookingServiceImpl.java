@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
@@ -32,9 +32,6 @@ public class BookingServiceImpl implements BookingService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
-    private static final Sort SORT = Sort.sort(Booking.class)
-                                         .by(Booking::getStart)
-                                         .descending();
 
     @Override
     public Booking create(long userId, BookingDto bookingDto) {
@@ -95,38 +92,35 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDtoWithStatus> getByBookerIdAndState(String state, long userId) {
+    public List<BookingDtoWithStatus> getByBookerIdAndState(String state, long userId, int from,
+            int size) {
         containsUser(userId);
+        validatePage(from, size);
+        PageRequest pageRequest = PageRequest.of(from / size, size);
         List<Booking> bookings = new ArrayList<>();
         switch (state) {
             case "ALL":
-                bookings = bookingRepository.findByBookerIdOrderByStartDesc(userId);
+                bookings = bookingRepository.findByBookerIdOrderByStartDesc(userId, pageRequest);
                 break;
             case "CURRENT":
-                bookings = bookingRepository.findByBookerIdAndStartIsBeforeAndEndIsAfter(userId,
-                        LocalDateTime.now(), LocalDateTime.now(), SORT);
+                bookings = bookingRepository.findByBookerIdAndStartIsBeforeAndEndIsAfterOrderByStartDesc(
+                        userId, LocalDateTime.now(), LocalDateTime.now(), pageRequest);
                 break;
             case "PAST":
-                bookings = bookingRepository.findByBookerIdAndEndIsBefore(userId,
-                        LocalDateTime.now(), SORT);
+                bookings = bookingRepository.findByBookerIdAndEndIsBeforeOrderByStartDesc(userId,
+                        LocalDateTime.now(), pageRequest);
                 break;
             case "FUTURE":
-                bookings = bookingRepository.findByBookerIdAndStartIsAfter(userId,
-                        LocalDateTime.now(), SORT);
+                bookings = bookingRepository.findByBookerIdAndStartIsAfterOrderByStartDesc(userId,
+                        LocalDateTime.now(), pageRequest);
                 break;
             case "WAITING":
-                bookings = bookingRepository.findByBookerId(userId)
-                                            .stream()
-                                            .filter(booking -> booking.getStatus()
-                                                                      .equals(BookingState.WAITING))
-                                            .collect(Collectors.toList());
+                bookings = bookingRepository.findByBookerIdAndStatusOrderByStartDesc(userId,
+                        BookingState.WAITING, pageRequest);
                 break;
             case "REJECTED":
-                bookings = bookingRepository.findByBookerId(userId)
-                                            .stream()
-                                            .filter(booking -> booking.getStatus()
-                                                                      .equals(BookingState.REJECTED))
-                                            .collect(Collectors.toList());
+                bookings = bookingRepository.findByBookerIdAndStatusOrderByStartDesc(userId,
+                        BookingState.REJECTED, pageRequest);
                 break;
             default:
                 throw new ValidationException("Unknown state: " + state);
@@ -137,38 +131,37 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDtoWithStatus> getByItemOwnerIdAndState(String state, long userId) {
+    public List<BookingDtoWithStatus> getByItemOwnerIdAndState(String state, long userId, int from,
+            int size) {
         containsUser(userId);
+        validatePage(from, size);
+        PageRequest pageRequest = PageRequest.of(from / size, size);
         List<Booking> bookings = new ArrayList<>();
         switch (state) {
             case "ALL":
-                bookings = bookingRepository.findByItemOwnerIdOrderByStartDesc(userId);
+                bookings = bookingRepository.findByItemOwnerIdOrderByStartDesc(userId, pageRequest);
                 break;
             case "CURRENT":
-                bookings = bookingRepository.findByItemOwnerIdAndStartIsBeforeAndEndIsAfter(userId,
-                        LocalDateTime.now(), LocalDateTime.now(), SORT);
+                bookings = bookingRepository.findByItemOwnerIdAndStartIsBeforeAndEndIsAfterOrderByStartDesc(
+                        userId,
+                        LocalDateTime.now(), LocalDateTime.now(), pageRequest);
                 break;
             case "PAST":
-                bookings = bookingRepository.findByItemOwnerIdAndEndIsBefore(userId,
-                        LocalDateTime.now(), SORT);
+                bookings = bookingRepository.findByItemOwnerIdAndEndIsBeforeOrderByStartDesc(userId,
+                        LocalDateTime.now(), pageRequest);
                 break;
             case "FUTURE":
-                bookings = bookingRepository.findByItemOwnerIdAndStartIsAfter(userId,
-                        LocalDateTime.now(), SORT);
+                bookings = bookingRepository.findByItemOwnerIdAndStartIsAfterOrderByStartDesc(
+                        userId,
+                        LocalDateTime.now(), pageRequest);
                 break;
             case "WAITING":
-                bookings = bookingRepository.findByItemOwnerId(userId)
-                                            .stream()
-                                            .filter(booking -> booking.getStatus()
-                                                                      .equals(BookingState.WAITING))
-                                            .collect(Collectors.toList());
+                bookings = bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(userId,
+                        BookingState.WAITING, pageRequest);
                 break;
             case "REJECTED":
-                bookings = bookingRepository.findByItemOwnerId(userId)
-                                            .stream()
-                                            .filter(booking -> booking.getStatus()
-                                                                      .equals(BookingState.REJECTED))
-                                            .collect(Collectors.toList());
+                bookings = bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(userId,
+                        BookingState.REJECTED, pageRequest);
                 break;
             default:
                 throw new ValidationException("Unknown state: " + state);
@@ -216,6 +209,16 @@ public class BookingServiceImpl implements BookingService {
                 item.getId(), BookingState.APPROVED, booking.getStart(), booking.getEnd());
         if (bookingFromRepository != null) {
             throw new ValidationException("Invalid booking range");
+        }
+    }
+
+    private void validatePage(int from, int size) {
+        if (from < 0) {
+            throw new ValidationException(
+                    "It is not possible to start the display with a negative element.");
+        }
+        if (size < 1) {
+            throw new ValidationException("The number of records cannot be less than 1.");
         }
     }
 }

@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
@@ -33,6 +36,7 @@ import ru.practicum.shareit.user.storage.UserRepository;
 @Transactional
 public class ItemServiceImpl implements ItemService {
 
+    private final static Sort SORT = Sort.by(Direction.ASC, "id");
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
@@ -62,13 +66,14 @@ public class ItemServiceImpl implements ItemService {
                                   .collect(Collectors.toList());
         }
         if (userId == item.getOwnerId()) {
-            List<Booking> bookings = bookingRepository.findByItemId(itemId);
-            Booking lastBooking = bookingRepository.findFirstByItemIdAndStartIsBeforeAndStatusIsOrderByStartDesc(itemId, LocalDateTime.now(), BookingState.APPROVED);
+            Booking lastBooking = bookingRepository.findFirstByItemIdAndStartIsBeforeAndStatusIsOrderByStartDesc(
+                    itemId, LocalDateTime.now(), BookingState.APPROVED);
             BookingDto lastBookingDto = null;
             if (lastBooking != null) {
                 lastBookingDto = bookingMapper.mapToBookingDto(lastBooking);
             }
-            Booking nextBooking = bookingRepository.findFirstByItemIdAndStartIsAfterAndStatusIsOrderByStartAsc(itemId, LocalDateTime.now(), BookingState.APPROVED);
+            Booking nextBooking = bookingRepository.findFirstByItemIdAndStartIsAfterAndStatusIsOrderByStartAsc(
+                    itemId, LocalDateTime.now(), BookingState.APPROVED);
             BookingDto nextBookingDto = null;
             if (nextBooking != null) {
                 nextBookingDto = bookingMapper.mapToBookingDto(nextBooking);
@@ -83,23 +88,30 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<Item> getByName(String name) {
+    public List<Item> getByName(String name, int from, int size) {
         if (name.isBlank()) {
             log.info("Get list with empty items name.");
             return new ArrayList<>();
         }
-        List<Item> items = itemRepository.findAllByName(name);
+        validatePage(from, size);
+        PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
+        List<Item> items = itemRepository.findAllByName(name, pageRequest);
         log.info("Get items by name: " + items);
         return items;
     }
 
     @Override
-    public List<ItemDto> getAllItemsByUserId(long userId) {
+    public List<ItemDto> getAllItemsByUserId(long userId, int from, int size) {
         containsUser(userId);
-        List<Item> items = itemRepository.findAllByOwnerId(userId);
-        List<ItemDto> itemsDto = items.stream()
-                                      .map(i -> getById(userId, i.getId()))
-                                      .collect(Collectors.toList());
+        validatePage(from, size);
+        PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
+        List<Item> items = itemRepository.findAllByOwnerId(userId, pageRequest);
+        List<ItemDto> itemsDto = new ArrayList<>();
+        if (!items.isEmpty()) {
+            itemsDto = items.stream()
+                 .map(i -> getById(userId, i.getId()))
+                 .collect(Collectors.toList());
+        }
         log.info("Get items by user id: " + itemsDto);
         return itemsDto;
     }
@@ -108,17 +120,16 @@ public class ItemServiceImpl implements ItemService {
     public Item updateItem(long userId, long itemId, Item item) {
         containsUser(userId);
         Item itemFromRepository = itemRepository.findById(itemId)
-                                                .orElseThrow(() -> new NotFoundException("Item not found."));
+                                                .orElseThrow(() -> new NotFoundException(
+                                                        "Item not found."));
         if (itemFromRepository.getOwnerId() != userId) {
             throw new NotFoundException(
                     "This item can update only user with id = " + itemFromRepository.getOwnerId());
         }
-        if (item.getName() != null && !item.getName()
-                                           .isBlank()) {
+        if (item.getName() != null && !item.getName().isBlank()) {
             itemFromRepository.setName(item.getName());
         }
-        if (item.getDescription() != null && !item.getDescription()
-                                                  .isBlank()) {
+        if (item.getDescription() != null && !item.getDescription().isBlank()) {
             itemFromRepository.setDescription(item.getDescription());
         }
         if (item.getAvailable() != null) {
@@ -147,7 +158,9 @@ public class ItemServiceImpl implements ItemService {
                                                           .isBlank()) {
             throw new ValidationException("Text of comment can't be empty.");
         }
-        if (bookingRepository.findByItemIdAndBookerIdAndStatusAndEndIsBefore(itemId, userId, BookingState.APPROVED, LocalDateTime.now()).isEmpty()) {
+        if (bookingRepository.findFirstByItemIdAndBookerIdAndStatusAndEndIsBefore(itemId, userId,
+                                     BookingState.APPROVED, LocalDateTime.now())
+                             .isEmpty()) {
             throw new ValidationException("This user can't add comment to this item.");
         }
         Comment comment = commentMapper.toComment(user, item, commentDtoRequest,
@@ -158,22 +171,29 @@ public class ItemServiceImpl implements ItemService {
 
     private void containsUser(long id) {
         if (!userRepository.existsById(id)) {
-            throw new NotFoundException(
-                    "User with id = " + id + " not exist.");
+            throw new NotFoundException("User with id = " + id + " not exist.");
         }
     }
 
     private void validateItem(Item item) {
-        if (item.getName() == null || item.getName()
-                                          .isBlank()) {
+        if (item.getName() == null || item.getName().isBlank()) {
             throw new ValidationException("You must specify the name.");
         }
-        if (item.getDescription() == null || item.getDescription()
-                                                 .isBlank()) {
+        if (item.getDescription() == null || item.getDescription().isBlank()) {
             throw new ValidationException("You must specify the description.");
         }
         if (item.getAvailable() == null) {
             throw new ValidationException("You must specify the available.");
+        }
+    }
+
+    private void validatePage(Integer from, Integer size) {
+        if (from < 0) {
+            throw new ValidationException(
+                    "It is not possible to start the display with a negative element.");
+        }
+        if (size < 1) {
+            throw new ValidationException("The number of records cannot be less than 1.");
         }
     }
 }

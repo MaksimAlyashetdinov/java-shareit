@@ -2,6 +2,8 @@ package ru.practicum.shareit.booking;
 
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -48,14 +50,22 @@ public class BookingController {
     @GetMapping
     public List<BookingDtoWithStatus> getByStateAndUserId(
             @RequestParam(value = "state", defaultValue = "ALL") String state,
-            @RequestHeader(USER_ID_HEADER) Long userId) {
-        return bookingService.getByBookerIdAndState(state, userId);
+            @RequestHeader(USER_ID_HEADER) Long userId,
+            @PositiveOrZero
+            @RequestParam(name = "from", defaultValue = "0") int from,
+            @Positive
+            @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
+        return bookingService.getByBookerIdAndState(state, userId, from, size);
     }
 
     @GetMapping("/owner")
     public List<BookingDtoWithStatus> getByItemOwnerIdAndState(
             @RequestParam(value = "state", defaultValue = "ALL") String state,
-            @RequestHeader(USER_ID_HEADER) Long userId) {
-        return bookingService.getByItemOwnerIdAndState(state, userId);
+            @RequestHeader(USER_ID_HEADER) Long userId,
+            @PositiveOrZero
+            @RequestParam(name = "from", defaultValue = "0") int from,
+            @Positive
+            @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
+        return bookingService.getByItemOwnerIdAndState(state, userId, from, size);
     }
 }

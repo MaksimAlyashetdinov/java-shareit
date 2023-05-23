@@ -12,6 +12,7 @@ public class ItemDto {
     private String description;
     private Boolean available;
     private Long ownerId;
+    private Long requestId;
     private BookingDto lastBooking;
     private BookingDto nextBooking;
     private List<CommentDto> comments;

@@ -2,6 +2,7 @@ package ru.practicum.shareit.item;
 
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,13 +41,19 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public List<Item> getByName(@RequestParam("text") String name) {
-        return itemService.getByName(name);
+    public List<Item> getByName(@RequestParam("text") String name,
+            @RequestParam(name = "from", defaultValue = "0") Integer from,
+            @Positive
+            @RequestParam(name = "size", defaultValue = "10", required = false) Integer size) {
+        return itemService.getByName(name, from, size);
     }
 
     @GetMapping
-    public List<ItemDto> getAllItemsByUserId(@RequestHeader(USER_ID_HEADER) Long userId) {
-        return itemService.getAllItemsByUserId(userId);
+    public List<ItemDto> getAllItemsByUserId(@RequestHeader(USER_ID_HEADER) Long userId,
+            @RequestParam(name = "from", defaultValue = "0") Integer from,
+            @Positive
+            @RequestParam(name = "size", defaultValue = "10", required = false) Integer size) {
+        return itemService.getAllItemsByUserId(userId, from, size);
     }
 
     @PatchMapping("/{itemId}")
@@ -63,8 +70,6 @@ public class ItemController {
     @PostMapping("/{itemId}/comment")
     public CommentDto addCommentToItem(@RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long itemId, @RequestBody CommentDtoRequest comment) {
-        long user = userId;
-        long item = itemId;
         CommentDtoRequest commentDtoRequest = comment;
         return itemService.addCommentToItem(userId, itemId, comment);
     }
