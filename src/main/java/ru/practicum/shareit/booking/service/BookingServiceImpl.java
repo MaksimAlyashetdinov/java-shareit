@@ -31,7 +31,6 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
-    private final BookingMapper bookingMapper;
 
     @Override
     public Booking create(long userId, BookingDto bookingDto) {
@@ -42,8 +41,7 @@ public class BookingServiceImpl implements BookingService {
         if (userId == item.getOwnerId()) {
             throw new NotFoundException("You can't booking own items.");
         }
-        Booking booking = bookingMapper.mapToBooking(bookingDto, item, booker,
-                BookingState.WAITING);
+        Booking booking = BookingMapper.mapToBooking(bookingDto, item, booker, BookingState.WAITING);
         validateBooking(booking);
         checkItemState(booking, item);
         log.info("Booking successfully added: " + booking);
@@ -126,7 +124,7 @@ public class BookingServiceImpl implements BookingService {
                 throw new ValidationException("Unknown state: " + state);
         }
         return bookings.stream()
-                       .map(booking -> bookingMapper.toBookingDtoWithStatus(booking))
+                       .map(booking -> BookingMapper.toBookingDtoWithStatus(booking))
                        .collect(Collectors.toList());
     }
 
@@ -167,7 +165,7 @@ public class BookingServiceImpl implements BookingService {
                 throw new ValidationException("Unknown state: " + state);
         }
         return bookings.stream()
-                       .map(booking -> bookingMapper.toBookingDtoWithStatus(booking))
+                       .map(booking -> BookingMapper.toBookingDtoWithStatus(booking))
                        .collect(Collectors.toList());
     }
 
@@ -197,7 +195,7 @@ public class BookingServiceImpl implements BookingService {
             throw new ValidationException("It is necessary to fill in all fields.");
         }
         Item item = itemRepository.findById(itemId)
-                                  .orElseThrow(() -> new NotFoundException("Item not found."));
+                                  .orElseThrow(() -> new NotFoundException("Item with id = " + itemId + " not exist."));
         if (!item.getAvailable()) {
             throw new ValidationException("Item is not available now.");
         }

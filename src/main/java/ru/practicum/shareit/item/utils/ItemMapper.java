@@ -45,4 +45,15 @@ public class ItemMapper {
         }
         return dto;
     }
+
+    public static Item mapToItem(ItemDto itemDto) {
+        Item item = new Item();
+        item.setId(itemDto.getId());
+        item.setName(itemDto.getName());
+        item.setDescription(itemDto.getDescription());
+        item.setOwnerId(itemDto.getOwnerId());
+        item.setAvailable(itemDto.getAvailable());
+        item.setRequestId(itemDto.getRequestId());
+        return item;
+    }
 }

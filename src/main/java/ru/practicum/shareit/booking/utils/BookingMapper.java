@@ -15,7 +15,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 @RequiredArgsConstructor
 public class BookingMapper {
 
-    public BookingDto mapToBookingDto(Booking booking) {
+    public static BookingDto mapToBookingDto(Booking booking) {
         BookingDto dto = new BookingDto();
         dto.setId(booking.getId());
         dto.setItemId(booking.getItem().getId());
@@ -25,7 +25,7 @@ public class BookingMapper {
         return dto;
     }
 
-    public Booking mapToBooking(BookingDto dto, Item item, User booker, BookingState state) {
+    public static Booking mapToBooking(BookingDto dto, Item item, User booker, BookingState state) {
         Booking booking = new Booking();
         booking.setId(dto.getId());
         booking.setItem(item);
@@ -36,7 +36,7 @@ public class BookingMapper {
         return booking;
     }
 
-    public BookingDtoWithStatus toBookingDtoWithStatus(Booking booking) {
+    public static BookingDtoWithStatus toBookingDtoWithStatus(Booking booking) {
         BookingDtoWithStatus bookingDtoToResponse = new BookingDtoWithStatus();
         bookingDtoToResponse.setId(booking.getId());
         Item item = booking.getItem();
