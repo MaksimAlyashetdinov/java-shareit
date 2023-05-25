@@ -36,7 +36,7 @@ import ru.practicum.shareit.user.storage.UserRepository;
 @Transactional
 public class ItemServiceImpl implements ItemService {
 
-    private final static Sort SORT = Sort.by(Direction.ASC, "id");
+    private final Sort SORT = Sort.by(Direction.ASC, "id");
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;

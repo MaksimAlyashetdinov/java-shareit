@@ -29,7 +29,7 @@ import ru.practicum.shareit.user.storage.UserRepository;
 @Transactional
 public class ItemRequestServiceImpl implements ItemRequestService {
 
-    private final static Sort SORT = Sort.by(Sort.Direction.DESC, "created");
+    private final Sort SORT = Sort.by(Sort.Direction.DESC, "created");
     private final ItemRequestRepository itemRequestRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
