@@ -29,7 +29,7 @@ import ru.practicum.shareit.user.storage.UserRepository;
 @Transactional
 public class ItemRequestServiceImpl implements ItemRequestService {
 
-    private final Sort SORT = Sort.by(Sort.Direction.DESC, "created");
+    private final Sort sort = Sort.by(Sort.Direction.DESC, "created");
     private final ItemRequestRepository itemRequestRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
@@ -65,7 +65,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public List<ItemRequestDto> getAllByUser(Long userId) {
         containsUser(userId);
         List<ItemRequestDto> userItemRequestsDto = new ArrayList<>();
-        List<ItemRequest> userItemRequests = itemRequestRepository.findByRequesterId(userId, SORT);
+        List<ItemRequest> userItemRequests = itemRequestRepository.findByRequesterId(userId, sort);
         if (!userItemRequests.isEmpty()) {
             userItemRequestsDto = userItemRequests.stream()
                                                   .map(itemRequest -> ItemRequestMapper.toItemRequestDto(
@@ -83,7 +83,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public List<ItemRequestDto> getAll(Long userId, Integer from, Integer size) {
         containsUser(userId);
         validatePage(from, size);
-        PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
+        PageRequest pageRequest = PageRequest.of(from / size, size, sort);
         List<ItemRequest> allItemRequests = itemRequestRepository.findAllByRequesterIdNot(userId,
                 pageRequest);
         List<ItemRequestDto> allItemRequestsDto = allItemRequests.stream()

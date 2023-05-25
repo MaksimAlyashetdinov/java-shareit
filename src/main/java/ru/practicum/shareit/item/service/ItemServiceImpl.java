@@ -36,7 +36,7 @@ import ru.practicum.shareit.user.storage.UserRepository;
 @Transactional
 public class ItemServiceImpl implements ItemService {
 
-    private final Sort SORT = Sort.by(Direction.ASC, "id");
+    private final Sort sort = Sort.by(Direction.ASC, "id");
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
@@ -94,7 +94,7 @@ public class ItemServiceImpl implements ItemService {
             return new ArrayList<>();
         }
         validatePage(from, size);
-        PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
+        PageRequest pageRequest = PageRequest.of(from / size, size, sort);
         List<Item> items = itemRepository.findAllByName(name, pageRequest);
         log.info("Get items by name: " + items);
         return items;
@@ -104,7 +104,7 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> getAllItemsByUserId(long userId, int from, int size) {
         containsUser(userId);
         validatePage(from, size);
-        PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
+        PageRequest pageRequest = PageRequest.of(from / size, size, sort);
         List<Item> items = itemRepository.findAllByOwnerId(userId, pageRequest);
         List<ItemDto> itemsDto = new ArrayList<>();
         if (!items.isEmpty()) {
