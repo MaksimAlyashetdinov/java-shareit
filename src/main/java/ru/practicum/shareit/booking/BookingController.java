@@ -1,7 +1,6 @@
 package ru.practicum.shareit.booking;
 
 import java.util.List;
-import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ public class BookingController {
 
     @PostMapping
     public Booking createBooking(@RequestHeader(USER_ID_HEADER) Long userId,
-            @Valid @RequestBody BookingDto bookingDto) {
+            @RequestBody BookingDto bookingDto) {
         bookingDto.setBookerId(userId);
         return bookingService.create(userId, bookingDto);
     }

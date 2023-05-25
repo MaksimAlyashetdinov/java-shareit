@@ -11,7 +11,7 @@ import ru.practicum.shareit.user.User;
 @Component
 public class CommentMapper {
 
-    public CommentDto toCommentDto(Comment comment) {
+    public static CommentDto toCommentDto(Comment comment) {
         CommentDto commentDto = new CommentDto();
         commentDto.setId(comment.getId());
         commentDto.setText(comment.getText());
@@ -20,9 +20,10 @@ public class CommentMapper {
         return commentDto;
     }
 
-    public Comment toComment(User author, Item item, CommentDtoRequest commentDtoRequest,
+    public static Comment toComment(User author, Item item, CommentDtoRequest commentDtoRequest,
             LocalDateTime now) {
         Comment comment = new Comment();
+        comment.setId(commentDtoRequest.getId());
         comment.setText(commentDtoRequest.getText());
         comment.setAuthor(author);
         comment.setItem(item);

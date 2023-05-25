@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -85,7 +84,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         containsUser(userId);
         validatePage(from, size);
         PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
-        Page<ItemRequest> allItemRequests = itemRequestRepository.findAllByRequesterIdNot(userId,
+        List<ItemRequest> allItemRequests = itemRequestRepository.findAllByRequesterIdNot(userId,
                 pageRequest);
         List<ItemRequestDto> allItemRequestsDto = allItemRequests.stream()
                                                                  .map(itemRequest -> ItemRequestMapper.toItemRequestDto(

@@ -70,7 +70,6 @@ public class ItemController {
     @PostMapping("/{itemId}/comment")
     public CommentDto addCommentToItem(@RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long itemId, @RequestBody CommentDtoRequest comment) {
-        CommentDtoRequest commentDtoRequest = comment;
         return itemService.addCommentToItem(userId, itemId, comment);
     }
 }
