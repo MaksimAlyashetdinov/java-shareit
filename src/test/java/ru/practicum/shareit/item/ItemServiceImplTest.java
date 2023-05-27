@@ -62,7 +62,7 @@ public class ItemServiceImplTest {
     private CommentDtoRequest commentDtoRequest;
 
     @BeforeEach
-    void SetUp() {
+    void setUp() {
         itemOwner = createUser(1);
         user = createUser(2);
         item = createItem(1, itemOwner.getId());
