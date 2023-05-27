@@ -6,6 +6,7 @@ import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingState;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoWithStatus;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDtoShort;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
@@ -16,6 +17,9 @@ import ru.practicum.shareit.user.dto.UserDto;
 public class BookingMapper {
 
     public static BookingDto mapToBookingDto(Booking booking) {
+        if (booking.getId() == null || booking.getItem() == null || booking.getBooker() == null || booking.getStart() == null || booking.getEnd() == null) {
+            throw  new ValidationException("All booking fields must be filled in.");
+        }
         BookingDto dto = new BookingDto();
         dto.setId(booking.getId());
         dto.setItemId(booking.getItem().getId());
@@ -26,6 +30,19 @@ public class BookingMapper {
     }
 
     public static Booking mapToBooking(BookingDto dto, Item item, User booker, BookingState state) {
+        if (dto.getStart() == null || dto.getEnd() == null) {
+            throw  new ValidationException("All bookingDto fields must be filled in.");
+        }
+        if (item == null) {
+            throw  new ValidationException("Item can't be empty.");
+        }
+        if (booker == null) {
+            throw  new ValidationException("Booker can't be empty.");
+        }
+
+        if (state == null) {
+            throw  new ValidationException("Booking state can't be empty.");
+        }
         Booking booking = new Booking();
         booking.setId(dto.getId());
         booking.setItem(item);
@@ -37,6 +54,9 @@ public class BookingMapper {
     }
 
     public static BookingDtoWithStatus toBookingDtoWithStatus(Booking booking) {
+        if (booking.getId() == null || booking.getItem() == null || booking.getBooker() == null || booking.getStart() == null || booking.getEnd() == null) {
+            throw  new ValidationException("All booking fields must be filled in.");
+        }
         BookingDtoWithStatus bookingDtoToResponse = new BookingDtoWithStatus();
         bookingDtoToResponse.setId(booking.getId());
         Item item = booking.getItem();

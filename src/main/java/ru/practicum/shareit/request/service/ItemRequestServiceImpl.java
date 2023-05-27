@@ -36,13 +36,13 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public ItemRequestDto create(ItemRequestDto requestDto, Long userId, LocalDateTime createDate) {
+        validateItemRequestDto(requestDto);
         User requester = userRepository.findById(userId)
                                        .orElseThrow(() -> new NotFoundException(
                                                "User with id = " + userId + " not exist."));
+        requestDto.setRequester(requester);
+        requestDto.setCreated(createDate);
         ItemRequest itemRequest = ItemRequestMapper.toItemRequest(requestDto);
-        validateItemRequest(itemRequest);
-        itemRequest.setRequester(requester);
-        itemRequest.setCreated(createDate);
         itemRequestRepository.save(itemRequest);
         log.info("Item request successfully added: " + itemRequest);
         return ItemRequestMapper.toItemRequestDto(itemRequest);
@@ -102,7 +102,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         }
     }
 
-    private void validateItemRequest(ItemRequest itemRequest) {
+    private void validateItemRequestDto(ItemRequestDto itemRequest) {
         if (itemRequest.getDescription() == null || itemRequest.getDescription().isBlank()) {
             throw new ValidationException("Description can't be empty.");
         }

@@ -140,11 +140,12 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public void deleteItem(long itemId) {
+    public Item deleteItem(long itemId) {
         Item item = itemRepository.findById(itemId)
                                   .orElseThrow(() -> new NotFoundException("Item not found."));
         log.info("Deleted item with id: {}", itemId);
         itemRepository.delete(item);
+        return item;
     }
 
     @Override

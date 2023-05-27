@@ -18,7 +18,7 @@ public interface ItemService {
 
     Item updateItem(long userId, long itemId, Item item);
 
-    void deleteItem(long itemId);
+    Item deleteItem(long itemId);
 
     CommentDto addCommentToItem(long userId, long itemId, CommentDtoRequest comment);
 }

@@ -190,8 +190,8 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private Item containsItem(long itemId) {
-        if (itemId == 0) {
+    private Item containsItem(Long itemId) {
+        if (itemId == null) {
             throw new ValidationException("It is necessary to fill in all fields.");
         }
         Item item = itemRepository.findById(itemId)
