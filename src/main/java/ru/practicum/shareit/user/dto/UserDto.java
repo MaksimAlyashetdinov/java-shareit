@@ -2,10 +2,13 @@ package ru.practicum.shareit.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import ru.practicum.shareit.user.User;
 
 @Data
 @AllArgsConstructor
-public class UserDto {
+@NoArgsConstructor
+public class UserDto extends User {
 
     private Long id;
     private String name;

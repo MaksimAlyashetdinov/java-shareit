@@ -38,11 +38,4 @@ public class ErrorHandler {
         log.error(HttpStatus.INTERNAL_SERVER_ERROR.toString(), e);
         return new ErrorResponse(e.getMessage());
     }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleObjectAlreadyExistsException(final ObjectAlreadyExistsException e) {
-        log.error(e.getMessage());
-        return new ErrorResponse(e.getMessage());
-    }
 }
