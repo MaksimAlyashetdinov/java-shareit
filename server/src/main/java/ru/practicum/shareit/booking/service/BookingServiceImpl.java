@@ -42,7 +42,6 @@ public class BookingServiceImpl implements BookingService {
             throw new NotFoundException("You can't booking own items.");
         }
         Booking booking = BookingMapper.mapToBooking(bookingDto, item, booker, BookingState.WAITING);
-        validateBooking(booking);
         checkItemState(booking, item);
         log.info("Booking successfully added: " + booking.getStart());
         return bookingRepository.save(booking);
@@ -54,10 +53,8 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(id)
                                            .orElseThrow(() -> new NotFoundException(
                                                    "Booking not found."));
-        Item item = containsItem(booking.getItem()
-                                        .getId());
-        if (booking.getBooker()
-                   .getId() != userId && item.getOwnerId() != userId) {
+        Item item = containsItem(booking.getItem().getId());
+        if (booking.getBooker().getId() != userId && item.getOwnerId() != userId) {
             throw new NotFoundException(
                     "The user does not have access to the requested booking.");
         }
@@ -70,14 +67,12 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(id)
                                            .orElseThrow(() -> new NotFoundException(
                                                    "Booking not found."));
-        Item item = containsItem(booking.getItem()
-                                        .getId());
+        Item item = containsItem(booking.getItem().getId());
         containsUser(userId);
         if (item.getOwnerId() != userId) {
             throw new NotFoundException("This user can't change status.");
         }
-        if (booking.getStatus()
-                   .equals(BookingState.APPROVED)) {
+        if (booking.getStatus().equals(BookingState.APPROVED)) {
             throw new ValidationException("This booking is approved before that.");
         }
         if (approved == true) {
@@ -93,7 +88,6 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingDtoWithStatus> getByBookerIdAndState(String state, long userId, int from,
             int size) {
         containsUser(userId);
-        validatePage(from, size);
         PageRequest pageRequest = PageRequest.of(from / size, size);
         List<Booking> bookings = new ArrayList<>();
         switch (state) {
@@ -132,7 +126,6 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingDtoWithStatus> getByItemOwnerIdAndState(String state, long userId, int from,
             int size) {
         containsUser(userId);
-        validatePage(from, size);
         PageRequest pageRequest = PageRequest.of(from / size, size);
         List<Booking> bookings = new ArrayList<>();
         switch (state) {
@@ -167,21 +160,6 @@ public class BookingServiceImpl implements BookingService {
         return bookings.stream()
                        .map(booking -> BookingMapper.toBookingDtoWithStatus(booking))
                        .collect(Collectors.toList());
-    }
-
-    private void validateBooking(Booking booking) {
-        if (booking.getStart() == null || booking.getStart()
-                                                 .isBefore(LocalDateTime.now())) {
-            throw new ValidationException(
-                    "The start of the booking cannot be earlier than the current date or empty.");
-        }
-        if (booking.getEnd() == null || booking.getEnd()
-                                               .isBefore(booking.getStart()) || booking.getEnd()
-                                                                                       .isEqual(
-                                                                                               booking.getStart())) {
-            throw new ValidationException(
-                    "The end of the booking cannot be earlier than the beginning or match it.");
-        }
     }
 
     private void containsUser(long id) {

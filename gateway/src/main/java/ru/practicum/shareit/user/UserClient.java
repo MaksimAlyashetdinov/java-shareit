@@ -17,7 +17,8 @@ public class UserClient extends BaseClient {
     private static final String API_PREFIX = "/users";
 
     @Autowired
-    public UserClient(@Value("${shareit-server.url}") String serverUrl, RestTemplateBuilder builder) {
+    public UserClient(@Value("${shareit-server.url}") String serverUrl,
+            RestTemplateBuilder builder) {
         super(
                 builder
                         .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl + API_PREFIX))
@@ -27,8 +28,7 @@ public class UserClient extends BaseClient {
     }
 
     public ResponseEntity<Object> createUser(UserRequestDto requestDto) {
-        if (requestDto.getName() == null
-                || requestDto.getEmail() == null) {
+        if (requestDto.getName() == null || requestDto.getEmail() == null) {
             throw new ValidationException("You must specify the name and email.");
         }
         return post("", requestDto);

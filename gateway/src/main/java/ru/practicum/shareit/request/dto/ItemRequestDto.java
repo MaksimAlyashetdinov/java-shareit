@@ -12,7 +12,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ItemRequestDto{
+public class ItemRequestDto {
 
     private Long id;
     @NotNull

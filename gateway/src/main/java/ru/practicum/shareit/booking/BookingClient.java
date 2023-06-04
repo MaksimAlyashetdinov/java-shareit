@@ -1,5 +1,6 @@
 package ru.practicum.shareit.booking;
 
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -12,13 +13,16 @@ import ru.practicum.shareit.booking.dto.BookingState;
 import ru.practicum.shareit.client.BaseClient;
 
 import java.util.Map;
+import ru.practicum.shareit.exception.ValidationException;
 
 @Service
 public class BookingClient extends BaseClient {
+
     private static final String API_PREFIX = "/bookings";
 
     @Autowired
-    public BookingClient(@Value("${shareit-server.url}") String serverUrl, RestTemplateBuilder builder) {
+    public BookingClient(@Value("${shareit-server.url}") String serverUrl,
+            RestTemplateBuilder builder) {
         super(
                 builder
                         .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl + API_PREFIX))
@@ -27,7 +31,8 @@ public class BookingClient extends BaseClient {
         );
     }
 
-    public ResponseEntity<Object> getBookingsForOwner(long userId, BookingState state, Integer from, Integer size) {
+    public ResponseEntity<Object> getBookingsForOwner(long userId, BookingState state, Integer from,
+            Integer size) {
         Map<String, Object> parameters = Map.of(
                 "state", state.name(),
                 "from", from,
@@ -36,7 +41,8 @@ public class BookingClient extends BaseClient {
         return get("/owner?state={state}&from={from}&size={size}", userId, parameters);
     }
 
-    public ResponseEntity<Object> getBookings(long userId, BookingState state, Integer from, Integer size) {
+    public ResponseEntity<Object> getBookings(long userId, BookingState state, Integer from,
+            Integer size) {
         Map<String, Object> parameters = Map.of(
                 "state", state.name(),
                 "from", from,
@@ -47,6 +53,18 @@ public class BookingClient extends BaseClient {
 
 
     public ResponseEntity<Object> bookItem(long userId, BookItemRequestDto requestDto) {
+        if (requestDto.getStart() == null || requestDto.getStart()
+                                                 .isBefore(LocalDateTime.now())) {
+            throw new ValidationException(
+                    "The start of the booking cannot be earlier than the current date or empty.");
+        }
+        if (requestDto.getEnd() == null || requestDto.getEnd()
+                                               .isBefore(requestDto.getStart()) || requestDto.getEnd()
+                                                                                       .isEqual(
+                                                                                               requestDto.getStart())) {
+            throw new ValidationException(
+                    "The end of the booking cannot be earlier than the beginning or match it.");
+        }
         return post("", userId, requestDto);
     }
 
@@ -58,6 +76,6 @@ public class BookingClient extends BaseClient {
         Map<String, Object> parameters = Map.of(
                 "approved", approved
         );
-        return patch("/" + bookingId + "?approved={approved}",userId, parameters,null);
+        return patch("/" + bookingId + "?approved={approved}", userId, parameters, null);
     }
 }

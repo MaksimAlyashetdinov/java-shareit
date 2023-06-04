@@ -11,7 +11,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemRepository;
@@ -36,7 +35,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public ItemRequestDto create(ItemRequestDto requestDto, Long userId, LocalDateTime createDate) {
-        validateItemRequestDto(requestDto);
         User requester = userRepository.findById(userId)
                                        .orElseThrow(() -> new NotFoundException(
                                                "User with id = " + userId + " not exist."));
@@ -82,7 +80,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public List<ItemRequestDto> getAll(Long userId, Integer from, Integer size) {
         containsUser(userId);
-        validatePage(from, size);
         PageRequest pageRequest = PageRequest.of(from / size, size, sort);
         List<ItemRequest> allItemRequests = itemRequestRepository.findAllByRequesterIdNot(userId,
                 pageRequest);
@@ -99,22 +96,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     private void containsUser(long id) {
         if (!userRepository.existsById(id)) {
             throw new NotFoundException("User not found.");
-        }
-    }
-
-    private void validateItemRequestDto(ItemRequestDto itemRequest) {
-        if (itemRequest.getDescription() == null || itemRequest.getDescription().isBlank()) {
-            throw new ValidationException("Description can't be empty.");
-        }
-    }
-
-    private void validatePage(Integer from, Integer size) {
-        if (from < 0) {
-            throw new ValidationException(
-                    "It is not possible to start the display with a negative element.");
-        }
-        if (size < 1) {
-            throw new ValidationException("The number of records cannot be less than 1.");
         }
     }
 

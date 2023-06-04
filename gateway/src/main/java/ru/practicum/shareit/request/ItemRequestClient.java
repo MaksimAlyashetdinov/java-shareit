@@ -9,6 +9,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.shareit.client.BaseClient;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 
 @Service
@@ -17,7 +18,8 @@ public class ItemRequestClient extends BaseClient {
     private static final String API_PREFIX = "/requests";
 
     @Autowired
-    public ItemRequestClient(@Value("${shareit-server.url}") String serverUrl, RestTemplateBuilder builder) {
+    public ItemRequestClient(@Value("${shareit-server.url}") String serverUrl,
+            RestTemplateBuilder builder) {
         super(
                 builder
                         .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl + API_PREFIX))
@@ -27,6 +29,9 @@ public class ItemRequestClient extends BaseClient {
     }
 
     public ResponseEntity<Object> createItemRequest(long userId, ItemRequestDto requestDto) {
+        if (requestDto.getDescription() == null || requestDto.getDescription().isBlank()) {
+            throw new ValidationException("Description can't be empty.");
+        }
         return post("", userId, requestDto);
     }
 

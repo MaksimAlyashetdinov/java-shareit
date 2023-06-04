@@ -47,7 +47,6 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item createItem(long userId, Item item) {
-        validateItem(item);
         containsUser(userId);
         item.setOwnerId(userId);
         log.info("Item successfully added: " + item);
@@ -93,7 +92,6 @@ public class ItemServiceImpl implements ItemService {
             log.info("Get list with empty items name.");
             return new ArrayList<>();
         }
-        validatePage(from, size);
         PageRequest pageRequest = PageRequest.of(from / size, size, sort);
         List<Item> items = itemRepository.findAllByName(name, pageRequest);
         log.info("Get items by name: " + items);
@@ -103,7 +101,6 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> getAllItemsByUserId(long userId, int from, int size) {
         containsUser(userId);
-        validatePage(from, size);
         PageRequest pageRequest = PageRequest.of(from / size, size, sort);
         List<Item> items = itemRepository.findAllByOwnerId(userId, pageRequest);
         List<ItemDto> itemsDto = new ArrayList<>();
@@ -173,28 +170,6 @@ public class ItemServiceImpl implements ItemService {
     private void containsUser(long id) {
         if (!userRepository.existsById(id)) {
             throw new NotFoundException("User with id = " + id + " not exist.");
-        }
-    }
-
-    private void validateItem(Item item) {
-        if (item.getName() == null || item.getName().isBlank()) {
-            throw new ValidationException("You must specify the name.");
-        }
-        if (item.getDescription() == null || item.getDescription().isBlank()) {
-            throw new ValidationException("You must specify the description.");
-        }
-        if (item.getAvailable() == null) {
-            throw new ValidationException("You must specify the available.");
-        }
-    }
-
-    private void validatePage(Integer from, Integer size) {
-        if (from < 0) {
-            throw new ValidationException(
-                    "It is not possible to start the display with a negative element.");
-        }
-        if (size < 1) {
-            throw new ValidationException("The number of records cannot be less than 1.");
         }
     }
 }

@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.storage.UserRepository;
 
@@ -28,8 +27,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User create(User user) {
-        validate(user);
-        //checkEmail(user);
         log.info("User successfully added: " + user);
         return userRepository.save(user);
     }
@@ -39,8 +36,7 @@ public class UserServiceImpl implements UserService {
         User userFromStorage = userRepository.findById(userId)
                                              .orElseThrow(() -> new NotFoundException(
                                                      "User with not found."));
-        if (user.getName() != null && !user.getName()
-                                           .isBlank()) {
+        if (user.getName() != null && !user.getName().isBlank()) {
             userFromStorage.setName(user.getName());
         }
         if (user.getEmail() != null) {
@@ -66,17 +62,6 @@ public class UserServiceImpl implements UserService {
                                   .orElseThrow(() -> new NotFoundException("User not found."));
         log.info("Get user: " + user);
         return user;
-    }
-
-    private void validate(User user) {
-        if (user.getName() == null
-                || user.getEmail() == null) {
-            throw new ValidationException("You must specify the name and email.");
-        }
-        /*User userFromRepository = userRepository.findByEmail(user.getEmail());
-        if (userFromRepository != null & userFromRepository.getId() != user.getId()) {
-            throw new ConflictException("A user with such an email has already been created.");
-        }*/
     }
 
     private void checkEmail(User user) {
