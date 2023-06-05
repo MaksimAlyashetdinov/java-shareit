@@ -16,7 +16,7 @@ public class UserRequestDto {
     @NotBlank(groups = Marker.OnCreate.class)
     @Size(max = 255)
     private String name;
-    @NotBlank(groups = Marker.OnUpdate.class)
+    @NotBlank(groups = Marker.OnCreate.class)
     @Email
     @Size(max = 255)
     private String email;
