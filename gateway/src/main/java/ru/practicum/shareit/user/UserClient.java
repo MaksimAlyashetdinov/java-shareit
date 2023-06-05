@@ -8,7 +8,6 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.shareit.client.BaseClient;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.dto.UserRequestDto;
 
 @Service
@@ -28,9 +27,6 @@ public class UserClient extends BaseClient {
     }
 
     public ResponseEntity<Object> createUser(UserRequestDto requestDto) {
-        if (requestDto.getName() == null || requestDto.getEmail() == null) {
-            throw new ValidationException("You must specify the name and email.");
-        }
         return post("", requestDto);
     }
 

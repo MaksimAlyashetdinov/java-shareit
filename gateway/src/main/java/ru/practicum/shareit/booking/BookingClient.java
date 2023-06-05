@@ -1,6 +1,6 @@
 package ru.practicum.shareit.booking;
 
-import java.time.LocalDateTime;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -11,9 +11,6 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.shareit.booking.dto.BookItemRequestDto;
 import ru.practicum.shareit.booking.dto.BookingState;
 import ru.practicum.shareit.client.BaseClient;
-
-import java.util.Map;
-import ru.practicum.shareit.exception.ValidationException;
 
 @Service
 public class BookingClient extends BaseClient {
@@ -53,18 +50,6 @@ public class BookingClient extends BaseClient {
 
 
     public ResponseEntity<Object> bookItem(long userId, BookItemRequestDto requestDto) {
-        if (requestDto.getStart() == null || requestDto.getStart()
-                                                 .isBefore(LocalDateTime.now())) {
-            throw new ValidationException(
-                    "The start of the booking cannot be earlier than the current date or empty.");
-        }
-        if (requestDto.getEnd() == null || requestDto.getEnd()
-                                               .isBefore(requestDto.getStart()) || requestDto.getEnd()
-                                                                                       .isEqual(
-                                                                                               requestDto.getStart())) {
-            throw new ValidationException(
-                    "The end of the booking cannot be earlier than the beginning or match it.");
-        }
         return post("", userId, requestDto);
     }
 

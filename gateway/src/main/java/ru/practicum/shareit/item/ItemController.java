@@ -1,10 +1,12 @@
 package ru.practicum.shareit.item;
 
+import java.util.ArrayList;
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
@@ -51,6 +53,9 @@ public class ItemController {
             @Positive
             @RequestParam(name = "size", defaultValue = "10") Integer size) {
         log.info("Get items with text={}, userId={}, from={}, size={}", name, userId, from, size);
+        if (name.isBlank()) {
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        }
         return itemClient.getItemsByName(name, userId, from, size);
     }
 

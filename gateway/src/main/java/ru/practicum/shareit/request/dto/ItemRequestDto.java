@@ -1,13 +1,10 @@
 package ru.practicum.shareit.request.dto;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import javax.validation.constraints.FutureOrPresent;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.item.dto.ItemDto;
 
 @Getter
 @NoArgsConstructor
@@ -15,10 +12,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 public class ItemRequestDto {
 
     private Long id;
-    @NotNull
+    @NotBlank
+    @Size(max = 200)
     private String description;
-    private Long requester;
-    List<ItemDto> items;
-    @FutureOrPresent
-    LocalDateTime created;
 }
