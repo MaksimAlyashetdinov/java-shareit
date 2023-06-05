@@ -2,9 +2,6 @@ package ru.practicum.shareit.request;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,7 +23,7 @@ public class ItemRequestController {
     private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    public ItemRequestDto create(@Valid @RequestBody ItemRequestDto itemRequestDto,
+    public ItemRequestDto create(@RequestBody ItemRequestDto itemRequestDto,
             @RequestHeader(USER_ID_HEADER) Long userId) {
         return itemRequestService.create(itemRequestDto, userId, LocalDateTime.now());
     }
@@ -43,11 +40,11 @@ public class ItemRequestController {
     }
 
     @GetMapping(value = "/all")
-    public List<ItemRequestDto> getAll(@PositiveOrZero
-    @RequestParam(
-            name = "from",
-            defaultValue = "0") int from,
-            @Positive @RequestParam(
+    public List<ItemRequestDto> getAll(
+            @RequestParam(
+                    name = "from",
+                    defaultValue = "0") int from,
+            @RequestParam(
                     name = "size",
                     required = false,
                     defaultValue = "10") int size,

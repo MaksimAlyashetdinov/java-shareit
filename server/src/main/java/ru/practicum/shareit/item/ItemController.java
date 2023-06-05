@@ -1,8 +1,6 @@
 package ru.practicum.shareit.item;
 
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +28,7 @@ public class ItemController {
 
     @PostMapping
     public Item createItem(@RequestHeader(USER_ID_HEADER) Long userId,
-            @Valid @RequestBody Item item) {
+            @RequestBody Item item) {
         return itemService.createItem(userId, item);
     }
 
@@ -43,7 +41,6 @@ public class ItemController {
     @GetMapping("/search")
     public List<Item> getByName(@RequestHeader(USER_ID_HEADER) Long userId, @RequestParam("text") String name,
             @RequestParam(name = "from", defaultValue = "0") Integer from,
-            @Positive
             @RequestParam(name = "size", defaultValue = "10", required = false) Integer size) {
         return itemService.getByName(name, userId, from, size);
     }
@@ -51,14 +48,13 @@ public class ItemController {
     @GetMapping
     public List<ItemDto> getAllItemsByUserId(@RequestHeader(USER_ID_HEADER) Long userId,
             @RequestParam(name = "from", defaultValue = "0") Integer from,
-            @Positive
             @RequestParam(name = "size", defaultValue = "10", required = false) Integer size) {
         return itemService.getAllItemsByUserId(userId, from, size);
     }
 
     @PatchMapping("/{itemId}")
     public Item updateItem(@RequestHeader(USER_ID_HEADER) Long userId,
-            @PathVariable Long itemId, @Valid @RequestBody Item item) {
+            @PathVariable Long itemId, @RequestBody Item item) {
         return itemService.updateItem(userId, itemId, item);
     }
 

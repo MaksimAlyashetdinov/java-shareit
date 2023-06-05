@@ -1,7 +1,6 @@
 package ru.practicum.shareit.user;
 
 import java.util.Collection;
-import javax.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,7 +22,7 @@ public class UserController {
     }
 
     @PostMapping
-    public User create(@RequestBody @Valid User user) {
+    public User create(@RequestBody User user) {
         return userService.create(user);
     }
 
@@ -33,7 +32,7 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}")
-    public User update(@PathVariable Long userId, @RequestBody @Valid User user) {
+    public User update(@PathVariable Long userId, @RequestBody User user) {
         return userService.update(userId, user);
     }
 
