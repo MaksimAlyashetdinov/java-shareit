@@ -1,4 +1,4 @@
-package ru.practicum.shareit.valid;
+package ru.practicum.shareit.booking.valid;
 
 import java.time.LocalDateTime;
 import javax.validation.ConstraintValidator;
@@ -15,7 +15,7 @@ public class CheckDateValidator implements
     public boolean isValid(BookItemRequestDto bookingDto, ConstraintValidatorContext constraintValidatorContext) {
         LocalDateTime start = bookingDto.getStart();
         LocalDateTime end = bookingDto.getEnd();
-        if (start == null || end == null) {
+        if (start == null || end == null || start.isBefore(LocalDateTime.now())) {
             return false;
         }
         return start.isBefore(end);

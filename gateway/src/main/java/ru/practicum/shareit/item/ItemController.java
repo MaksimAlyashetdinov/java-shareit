@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.practicum.shareit.item.dto.CommentDtoRequest;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.valid.Marker;
+import ru.practicum.shareit.Marker;
 
 @Controller
 @RequestMapping(path = "/items")

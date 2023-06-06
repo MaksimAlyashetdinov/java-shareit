@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import ru.practicum.shareit.user.dto.UserRequestDto;
-import ru.practicum.shareit.valid.Marker;
+import ru.practicum.shareit.Marker;
 
 @Controller
 @RequestMapping(path = "/users")

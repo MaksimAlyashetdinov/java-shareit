@@ -6,7 +6,7 @@ import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.valid.Marker;
+import ru.practicum.shareit.Marker;
 
 @Getter
 @NoArgsConstructor

@@ -1,4 +1,4 @@
-package ru.practicum.shareit.valid;
+package ru.practicum.shareit.booking.valid;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
