@@ -35,7 +35,7 @@ public class ItemController {
     @PostMapping
     @Validated({Marker.OnCreate.class})
     public ResponseEntity<Object> createItem(@RequestHeader(USER_ID_HEADER) Long userId,
-            @RequestBody ItemDto item) {
+            @RequestBody @Valid ItemDto item) {
         log.info("Creating item={}, userId={}", item, userId);
         return itemClient.createItem(userId, item);
     }
