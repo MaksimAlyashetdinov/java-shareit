@@ -6,7 +6,7 @@ import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.user.Marker;
+import ru.practicum.shareit.valid.Marker;
 
 @Getter
 @NoArgsConstructor
@@ -17,7 +17,7 @@ public class UserRequestDto {
     @Size(max = 255)
     private String name;
     @NotBlank(groups = Marker.OnCreate.class)
-    @Email
+    @Email(groups = {Marker.OnCreate.class, Marker.OnUpdate.class})
     @Size(max = 255)
     private String email;
 }

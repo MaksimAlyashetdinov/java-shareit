@@ -1,12 +1,11 @@
 package ru.practicum.shareit.item;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.practicum.shareit.item.dto.CommentDtoRequest;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.valid.Marker;
 
 @Controller
 @RequestMapping(path = "/items")
@@ -33,8 +33,9 @@ public class ItemController {
     private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
+    @Validated({Marker.OnCreate.class})
     public ResponseEntity<Object> createItem(@RequestHeader(USER_ID_HEADER) Long userId,
-            @Valid @RequestBody ItemDto item) {
+            @RequestBody ItemDto item) {
         log.info("Creating item={}, userId={}", item, userId);
         return itemClient.createItem(userId, item);
     }
@@ -54,7 +55,7 @@ public class ItemController {
             @RequestParam(name = "size", defaultValue = "10") Integer size) {
         log.info("Get items with text={}, userId={}, from={}, size={}", name, userId, from, size);
         if (name.isBlank()) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            return ResponseEntity.ok(Collections.emptyList());
         }
         return itemClient.getItemsByName(name, userId, from, size);
     }

@@ -1,4 +1,4 @@
-package ru.practicum.shareit.booking.valid;
+package ru.practicum.shareit.valid;
 
 import java.time.LocalDateTime;
 import javax.validation.ConstraintValidator;

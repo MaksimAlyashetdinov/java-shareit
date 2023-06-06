@@ -9,7 +9,6 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.shareit.client.BaseClient;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.CommentDtoRequest;
 import ru.practicum.shareit.item.dto.ItemDto;
 
@@ -30,15 +29,6 @@ public class ItemClient extends BaseClient {
     }
 
     public ResponseEntity<Object> createItem(long userId, ItemDto requestDto) {
-        if (requestDto.getName() == null || requestDto.getName().isBlank()) {
-            throw new ValidationException("You must specify the name.");
-        }
-        if (requestDto.getDescription() == null || requestDto.getDescription().isBlank()) {
-            throw new ValidationException("You must specify the description.");
-        }
-        if (requestDto.getAvailable() == null) {
-            throw new ValidationException("You must specify the available.");
-        }
         return post("", userId, requestDto);
     }
 
