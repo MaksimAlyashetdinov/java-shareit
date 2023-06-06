@@ -10,13 +10,14 @@ import ru.practicum.shareit.valid.StartBeforeEndDateValid;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@StartBeforeEndDateValid
 public class BookItemRequestDto {
 
     @NotNull
     private Long itemId;
 
+    @StartBeforeEndDateValid
     private LocalDateTime start;
 
+    @StartBeforeEndDateValid
     private LocalDateTime end;
 }
