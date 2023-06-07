@@ -33,9 +33,8 @@ public class ItemController {
     private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    @Validated({Marker.OnCreate.class})
     public ResponseEntity<Object> createItem(@RequestHeader(USER_ID_HEADER) Long userId,
-            @RequestBody @Valid ItemDto item) {
+            @RequestBody @Validated({Marker.OnCreate.class}) ItemDto item) {
         log.info("Creating item={}, userId={}", item, userId);
         return itemClient.createItem(userId, item);
     }
