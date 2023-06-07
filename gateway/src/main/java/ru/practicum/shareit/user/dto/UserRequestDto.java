@@ -14,10 +14,10 @@ import ru.practicum.shareit.Marker;
 public class UserRequestDto {
 
     @NotBlank(groups = Marker.OnCreate.class)
-    @Size(max = 255)
+    @Size(max = 255, groups = {Marker.OnCreate.class, Marker.OnUpdate.class})
     private String name;
     @NotBlank(groups = Marker.OnCreate.class)
     @Email(groups = {Marker.OnCreate.class, Marker.OnUpdate.class})
-    @Size(max = 255)
+    @Size(max = 255, groups = {Marker.OnCreate.class, Marker.OnUpdate.class})
     private String email;
 }

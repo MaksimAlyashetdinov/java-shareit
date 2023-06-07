@@ -1,6 +1,5 @@
 package ru.practicum.shareit.user;
 
-import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +12,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import ru.practicum.shareit.user.dto.UserRequestDto;
 import ru.practicum.shareit.Marker;
+import ru.practicum.shareit.user.dto.UserRequestDto;
 
 @Controller
 @RequestMapping(path = "/users")
@@ -26,8 +25,7 @@ public class UserController {
     private final UserClient userClient;
 
     @PostMapping
-    @Validated({Marker.OnCreate.class})
-    public ResponseEntity<Object> create(@RequestBody @Valid UserRequestDto user) {
+    public ResponseEntity<Object> create(@RequestBody @Validated({Marker.OnCreate.class}) UserRequestDto user) {
         return userClient.createUser(user);
     }
 
@@ -37,9 +35,8 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}")
-    @Validated({Marker.OnUpdate.class})
     public ResponseEntity<Object> update(@PathVariable Long userId,
-            @RequestBody @Valid UserRequestDto user) {
+            @RequestBody @Validated({Marker.OnUpdate.class}) UserRequestDto user) {
         return userClient.updateUser(userId, user);
     }
 

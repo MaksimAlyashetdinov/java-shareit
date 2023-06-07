@@ -5,6 +5,7 @@ import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import ru.practicum.shareit.Marker;
 
 @Getter
 @NoArgsConstructor
@@ -13,6 +14,6 @@ public class ItemRequestDto {
 
     private Long id;
     @NotBlank
-    @Size(max = 200)
+    @Size(max = 200, groups = {Marker.OnCreate.class, Marker.OnUpdate.class})
     private String description;
 }
